@@ -171,7 +171,7 @@
             }
 
             sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
-            sortDateBtn.textContent = `Sort by Date ${sortState.type === 'date' ? (sortState.direction === 'asc' ? '(Newest)' : '(Oldest)') : ''}`;
+            sortDateBtn.textContent = `Sort by Date ${sortState.type === 'date' ? (sortState.direction === 'asc' ? '(Oldest)' : '(Newest)') : ''}`;
             sortNameBtn.classList.toggle('active', sortState.type === 'name');
             sortDateBtn.classList.toggle('active', sortState.type === 'date');
 
@@ -287,3 +287,4 @@
     </script>
 </body>
 </html>
+
