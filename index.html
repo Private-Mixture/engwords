@@ -6,24 +6,25 @@
     <title>My Words Gallery</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%2280%22 height=%2280%22 x=%2210%22 y=%2210%22 rx=%2215%22 ry=%2215%22 fill=%22%23bb86fc%22 /><text x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23121212%22 font-family=%22sans-serif%22 font-weight=%22bold%22>W+</text></svg>">
     <style>
-        :root{--background-color:#121212;--surface-color:#1e1e1e;--primary-color:#bb86fc;--text-on-background:rgba(255,255,255,.87);--text-on-surface:rgba(255,255,255,.6);--border-color:rgba(255,255,255,.12);--danger-color:#cf6679;--success-color:#03dac6}
+        :root{--background-color:#121212;--surface-color:#1e1e1e;--primary-color:#bb86fc;--text-on-background:rgba(255,255,255,.87);--text-on-surface:rgba(255,255,255,.6);--border-color:rgba(255,255,255,.12);--danger-color:#cf6679}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--background-color);color:var(--text-on-background);margin:0;padding:16px;font-size:14px;overscroll-behavior-y:contain}
         .container{max-width:600px;margin:0 auto;background-color:var(--surface-color);border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,.2);padding:16px;margin-bottom: 24px;}
         h1{font-size:24px;font-weight:600;margin:0 0 16px;text-align:center;color:var(--primary-color)}
         .form-section{margin-bottom:16px}
         .form-section label{display:block;margin-bottom:8px;font-weight:500;color:var(--text-on-surface)}
-        .input-field, .edit-input{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
-        .input-field:focus, .edit-input:focus{outline:2px solid var(--primary-color);border-color:transparent}
+        .input-field{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
+        .input-field:focus{outline:2px solid var(--primary-color);border-color:transparent}
         .button{width:100%;padding:12px;border:none;border-radius:6px;background-color:var(--primary-color);color:#000;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:background-color .2s ease}
         .button:hover{background-color:#a050f0}
+        .button.secondary{background-color: var(--surface-color); color: var(--text-on-surface); border: 1px solid var(--border-color);}
+        .button.secondary:hover{background-color: #2c2c2c;}
         .button:disabled{background-color:#555;color:#999;cursor:not-allowed}
         #gallery-container{max-width:600px; margin: 0 auto;}
         #gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:16px}
         .gallery-item{position:relative;border-radius:6px;overflow:hidden;background-color:#2c2c2c;box-shadow:0 2px 4px rgba(0,0,0,.3);display:flex;flex-direction:column; transition: transform 0.2s ease, box-shadow 0.2s ease;}
         .gallery-item:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.4)}
         .gallery-item img{width:100%;height:120px;object-fit:cover;display:block}
-        .gallery-item-footer{padding:8px;margin-top:auto; min-width: 0;} /* BUGFIX: Prevents children from stretching the parent */
-        .gallery-item-footer p{margin:0;text-align:center;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .gallery-item p{margin:8px;text-align:center;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; margin-top: auto;}
         .action-btn{position:absolute;top:6px;width:24px;height:24px;border:none;border-radius:50%;cursor:pointer;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center}
         .action-btn svg{width:14px;height:14px;fill:var(--background-color)}
         .delete-btn{right:6px;background-color:var(--danger-color)}
@@ -35,28 +36,40 @@
         #storage-bar-background{width:100%;height:8px;background-color:#2c2c2c;border-radius:4px;overflow:hidden;border:1px solid var(--border-color)}
         #storage-bar-fill{width:0%;height:100%;background-color:var(--primary-color);border-radius:4px;transition:width .3s ease-out}
         #error-message{color:var(--danger-color);font-weight:500;font-size:13px;text-align:center;padding:8px;background-color:rgba(207,102,121,.1);border-radius:4px;margin-bottom:12px;display:none}
-        .edit-controls{display:flex;justify-content:space-between;margin-top:4px}
-        .edit-controls button{background:0 0;border:0;cursor:pointer;padding:4px}
-        .edit-controls svg{width:20px;height:20px}
-        /* DESIGN FIX: Reverted sort controls to look like labels */
         #sort-container{display:flex;justify-content:center;gap:20px;margin-bottom:16px;font-size:14px}
         .sort-btn{cursor:pointer;color:var(--text-on-surface);transition: color 0.2s; background: none; border: none; font-family: inherit; font-size: inherit; padding: 0;}
         .sort-btn.active{color:var(--primary-color);font-weight:600}
-        .edit-replace-section{margin-top:12px; padding-top:12px; border-top: 1px solid var(--border-color);}
-        .edit-replace-section label{font-size:12px;}
-        .edit-image-url { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:opacity .2s, visibility .2s;}
+        .modal-overlay.visible{opacity:1;visibility:visible;}
+        .modal{background:var(--surface-color);padding:24px;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);width:90%;max-width:400px; transform: scale(0.95); transition: transform 0.2s;}
+        .modal-overlay.visible .modal{transform: scale(1);}
+        .modal h2{margin:0 0 16px;text-align:center;font-size:20px;}
+        .modal-preview-img{width:100%;height:150px;object-fit:contain;border-radius:6px;margin-bottom:16px;background-color:#121212;}
+        .modal-buttons{display:flex;gap:10px;margin-top:24px;}
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Add New Word</h1>
         <div id="error-message"></div>
-        <div class="form-section"><label for="word">1. Enter a caption (word)</label><input type="text" id="word" class="input-field" placeholder="e.g., Innovation"></div>
-        <div class="form-section"><label for="image-url">2a. Paste an image URL</label><input type="text" id="image-url" class="input-field" placeholder="https://..."></div>
+        <div class="form-section">
+            <label for="word">1. Enter a caption (word)</label>
+            <input type="text" id="word" class="input-field" placeholder="e.g., Innovation">
+        </div>
+        <div class="form-section">
+            <label for="image-url">2a. Paste an image URL</label>
+            <input type="text" id="image-url" class="input-field" placeholder="https://...">
+        </div>
         <div class="or-separator">OR</div>
-        <div class="form-section"><label for="image-file">2b. Upload a file from your computer</label><input type="file" id="image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif"></div>
+        <div class="form-section">
+             <label for="image-file">2b. Upload a file from your computer</label>
+             <input type="file" id="image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif">
+        </div>
         <button id="add-btn" class="button">Add to Gallery</button>
-        <div id="storage-container"><div id="storage-info"></div><div id="storage-bar-background"><div id="storage-bar-fill"></div></div></div>
+        <div id="storage-container">
+            <div id="storage-info"></div>
+            <div id="storage-bar-background"><div id="storage-bar-fill"></div></div>
+        </div>
     </div>
 
     <div id="gallery-container">
@@ -65,6 +78,31 @@
             <button id="sort-date-btn" class="sort-btn">Sort by Date</button>
         </div>
         <div id="gallery"></div>
+    </div>
+
+    <div id="edit-modal-overlay" class="modal-overlay">
+        <div class="modal" id="edit-modal">
+            <h2>Edit Item</h2>
+            <img id="edit-preview-img" class="modal-preview-img" src="" alt="Image preview">
+            <div class="form-section">
+                <label for="edit-word">Caption</label>
+                <input type="text" id="edit-word" class="input-field">
+            </div>
+            <p style="font-size: 12px; color: var(--text-on-surface); margin-bottom: 8px;">Replace Image (Optional)</p>
+            <div class="form-section">
+                <label for="edit-image-url">Paste an image URL</label>
+                <input type="text" id="edit-image-url" class="input-field" placeholder="https://...">
+            </div>
+            <div class="or-separator">OR</div>
+            <div class="form-section">
+                 <label for="edit-image-file">Upload a file from your computer</label>
+                 <input type="file" id="edit-image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif">
+            </div>
+            <div class="modal-buttons">
+                <button id="save-edit-btn" class="button">Save Changes</button>
+                <button id="cancel-edit-btn" class="button secondary">Cancel</button>
+            </div>
+        </div>
     </div>
     
     <svg style="display:none;">
@@ -76,14 +114,31 @@
 
     <script>
         const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortNameBtn = document.getElementById('sort-name-btn'), sortDateBtn = document.getElementById('sort-date-btn');
+        const editModalOverlay = document.getElementById('edit-modal-overlay'), editModal = document.getElementById('edit-modal'), editPreviewImg = document.getElementById('edit-preview-img'), editWordInput = document.getElementById('edit-word'), editImageUrlInput = document.getElementById('edit-image-url'), editImageFileInput = document.getElementById('edit-image-file'), saveEditBtn = document.getElementById('save-edit-btn'), cancelEditBtn = document.getElementById('cancel-edit-btn');
+        
         const STORAGE_LIMIT = 5 * 1024 * 1024, COMPRESSION_QUALITY = 0.75, MAX_DIMENSION = 300;
         
         let words = [], editingItemId = null;
-        let sortState = { type: 'name', direction: 'asc' }; // 'name' or 'date', 'asc' or 'desc'
+        let sortState = { type: 'name', direction: 'asc' };
 
         function generateUUID() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
         
-        function saveWords() { try { const d=JSON.stringify(words); if(d.length > STORAGE_LIMIT){displayError('Storage limit exceeded!');loadWords();return false}localStorage.setItem('galleryWords',d);renderGallery();return true}catch(e){displayError('Failed to save data.');return false} }
+        function saveWords() {
+            try {
+                const data = JSON.stringify(words);
+                if (data.length > STORAGE_LIMIT) {
+                    displayError('Storage limit exceeded!');
+                    loadWords();
+                    return false;
+                }
+                localStorage.setItem('galleryWords', data);
+                renderGallery();
+                return true;
+            } catch (e) {
+                displayError('Failed to save data.');
+                return false;
+            }
+        }
 
         function loadWords() {
             const saved = localStorage.getItem('galleryWords');
@@ -93,10 +148,13 @@
                     let needsSave = false;
                     words.forEach(w => {
                         if (!w.id) { w.id = generateUUID(); needsSave = true; }
-                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random()*100000; needsSave = true; }
+                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random() * 100000; needsSave = true; }
                     });
                     if (needsSave) setTimeout(() => saveWords(), 0);
-                } catch(e) { words = []; displayError("Could not load saved data."); }
+                } catch (e) {
+                    words = [];
+                    displayError("Could not load saved data.");
+                }
             }
             renderGallery();
         }
@@ -108,11 +166,10 @@
                 sorted.sort((a, b) => a.word.localeCompare(b.word));
                 if (sortState.direction === 'desc') sorted.reverse();
             } else { // date
-                sorted.sort((a, b) => b.timestamp - a.timestamp); // Newest first is natural desc
-                if (sortState.direction === 'desc') sorted.reverse(); // Oldest first is asc
+                sorted.sort((a, b) => b.timestamp - a.timestamp);
+                if (sortState.direction === 'desc') sorted.reverse();
             }
 
-            // Update sort button text
             sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
             sortDateBtn.textContent = `Sort by Date ${sortState.type === 'date' ? (sortState.direction === 'asc' ? '(Newest)' : '(Oldest)') : ''}`;
             sortNameBtn.classList.toggle('active', sortState.type === 'name');
@@ -122,55 +179,75 @@
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
                 div.setAttribute('data-id', item.id);
-                const isEditing = item.id === editingItemId;
-                div.innerHTML = `<img src="${item.image}" alt="${item.word}"><div class="gallery-item-footer"></div>`;
-                const footer = div.querySelector('.gallery-item-footer');
-                if (isEditing) {
-                    footer.innerHTML = `<input type="text" class="edit-input" value="${item.word}"><div class="edit-replace-section"><label>Replace Image (Optional)</label><input type="text" class="edit-image-url" placeholder="New image URL..."><input type="file" class="edit-image-file" style="width:100%; font-size: 10px;"></div><div class="edit-controls"><button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button><button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button></div>`;
-                } else {
-                    footer.innerHTML = `<p>${item.word}</p>`;
-                }
-                const editBtn = document.createElement('button'); editBtn.className = 'action-btn edit-btn'; editBtn.title = 'Edit'; editBtn.innerHTML = '<svg><use href="#icon-pencil"/></svg>';
-                const delBtn = document.createElement('button'); delBtn.className = 'action-btn delete-btn'; delBtn.title = 'Delete'; delBtn.innerHTML = '<svg><use href="#icon-trash"/></svg>';
-                div.appendChild(editBtn); div.appendChild(delBtn);
+                div.innerHTML = `<img src="${item.image}" alt="${item.word}"><p>${item.word}</p><button class="action-btn edit-btn" title="Edit"><svg><use href="#icon-pencil"/></svg></button><button class="action-btn delete-btn" title="Delete"><svg><use href="#icon-trash"/></svg></button>`;
                 gallery.appendChild(div);
             });
             updateStorageInfo();
         }
         
+        function openEditModal(id) {
+            const index = words.findIndex(w => w.id === id);
+            if (index === -1) return;
+            editingItemId = id;
+            const item = words[index];
+
+            editPreviewImg.src = item.image;
+            editWordInput.value = item.word;
+            editImageUrlInput.value = '';
+            editImageFileInput.value = '';
+            
+            editModalOverlay.classList.add('visible');
+        }
+
+        function closeEditModal() {
+            editingItemId = null;
+            editModalOverlay.classList.remove('visible');
+        }
+
         gallery.addEventListener('click', e => {
             const btn = e.target.closest('button'); if (!btn) return;
             const itemDiv = btn.closest('.gallery-item'); if (!itemDiv) return;
             const id = itemDiv.getAttribute('data-id'); if (!id) return;
             
             if (btn.classList.contains('edit-btn')) {
-                editingItemId = (editingItemId === id) ? null : id;
-                renderGallery();
-                if (editingItemId) { const input = gallery.querySelector(`[data-id="${id}"] .edit-input`); if (input) { input.focus(); input.select(); } }
+                openEditModal(id);
             } 
             else if (btn.classList.contains('delete-btn')) {
                 const index = words.findIndex(w => w.id === id); if (index === -1) return;
-                if (confirm(`Delete "${words[index].word}"?`)) { words.splice(index, 1); editingItemId = null; saveWords(); }
+                if (confirm(`Delete "${words[index].word}"?`)) { words.splice(index, 1); saveWords(); }
             } 
-            else if (btn.classList.contains('cancel-edit-btn')) {
-                editingItemId = null; renderGallery();
-            } 
-            else if (btn.classList.contains('save-edit-btn')) {
-                const index = words.findIndex(w => w.id === id); if (index === -1) return;
-                const newWord = itemDiv.querySelector('.edit-input').value.trim(), newUrl = itemDiv.querySelector('.edit-image-url').value.trim(), newFile = itemDiv.querySelector('.edit-image-file').files[0];
-                const hasNewWord = newWord && newWord !== words[index].word, hasNewImage = newUrl || newFile;
-                if (!hasNewWord && !hasNewImage) { editingItemId = null; renderGallery(); return; }
-                if (hasNewWord) { words[index].word = newWord; }
-                const handleError = msg => { displayError(msg); editingItemId = null; renderGallery(); };
-                if (hasNewImage) {
-                    const handleNewImage = imgData => { words[index].image = imgData; editingItemId = null; saveWords(); };
-                    if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
-                    else handleImageBlob(newFile, handleNewImage, handleError);
-                } else if (hasNewWord) {
-                    editingItemId = null; saveWords();
-                }
+        });
+
+        saveEditBtn.addEventListener('click', () => {
+            if (!editingItemId) return;
+            const index = words.findIndex(w => w.id === editingItemId); if (index === -1) return;
+
+            const newWord = editWordInput.value.trim();
+            const newUrl = editImageUrlInput.value.trim();
+            const newFile = editImageFileInput.files[0];
+            const hasNewWord = newWord && newWord !== words[index].word;
+            const hasNewImage = newUrl || newFile;
+
+            if (!hasNewWord && !hasNewImage) { closeEditModal(); return; }
+
+            saveEditBtn.disabled = true; saveEditBtn.textContent = 'Saving...';
+            const cleanup = () => { saveEditBtn.disabled = false; saveEditBtn.textContent = 'Save Changes'; closeEditModal(); };
+
+            if (hasNewWord) words[index].word = newWord;
+            
+            const handleError = msg => { displayError(msg); cleanup(); };
+            if (hasNewImage) {
+                const handleNewImage = imgData => { words[index].image = imgData; saveWords(); cleanup(); };
+                if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
+                else handleImageBlob(newFile, handleNewImage, handleError);
+            } else if (hasNewWord) {
+                saveWords();
+                cleanup();
             }
         });
+
+        cancelEditBtn.addEventListener('click', closeEditModal);
+        editModalOverlay.addEventListener('click', (e) => { if (e.target === editModalOverlay) closeEditModal(); });
         
         addBtn.addEventListener("click", () => {
             hideError(); addBtn.disabled = true; addBtn.textContent = 'Adding...';
@@ -182,7 +259,7 @@
             if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) return handleError(`Word "${word}" already exists.`);
             const addItem = imgData => {
                 words.push({ word, image: imgData, id: generateUUID(), timestamp: Date.now() });
-                editingItemId = null; if (saveWords()) { wordInput.value = ''; imageUrlInput.value = ''; imageFileInput.value = ''; }
+                if (saveWords()) { wordInput.value = ''; imageUrlInput.value = ''; imageFileInput.value = ''; }
                 cleanup();
             };
             if (url) toDataURL(url, addItem, handleError); else if (file) handleImageBlob(file, addItem, handleError);
@@ -191,16 +268,16 @@
         sortNameBtn.addEventListener('click', () => {
             if (sortState.type === 'name') { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } 
             else { sortState.type = 'name'; sortState.direction = 'asc'; }
-            editingItemId = null; renderGallery();
+            renderGallery();
         });
         sortDateBtn.addEventListener('click', () => {
             if (sortState.type === 'date') { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } 
             else { sortState.type = 'date'; sortState.direction = 'asc'; }
-            editingItemId = null; renderGallery();
+            renderGallery();
         });
         
         function updateStorageInfo() { const u=(localStorage.getItem("galleryWords")||"").length;storageInfo.textContent=`Storage: ${(u/1024).toFixed(2)} KB / ~${(STORAGE_LIMIT/1024/1024).toFixed(2)} MB used`,storageBarFill.style.width=`${Math.min(u/STORAGE_LIMIT*100,100)}%`; }
-        function displayError(msg) { errorMessage.textContent=msg,errorMessage.style.display="block" }
+        function displayError(msg) { errorMessage.textContent=msg;errorMessage.style.display="block" }
         function hideError() { errorMessage.style.display="none" }
         function compressImage(blob, cb, errCb) { const i=new Image;i.src=URL.createObjectURL(blob),i.onload=()=>{const b=document.createElement("canvas"),c=b.getContext("2d");let{width:w,height:h}=i;w>h?w>MAX_DIMENSION&&(h*=MAX_DIMENSION/w,w=MAX_DIMENSION):h>MAX_DIMENSION&&(w*=MAX_DIMENSION/h,h=MAX_DIMENSION),b.width=w,b.height=h,c.drawImage(i,0,0,w,h),cb(b.toDataURL("image/jpeg",COMPRESSION_QUALITY))},i.onerror=()=>errCb("Could not process image file.") }
         function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
