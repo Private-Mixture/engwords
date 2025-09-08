@@ -14,8 +14,8 @@
         .form-section label{display:block;margin-bottom:8px;font-weight:500;color:var(--text-on-surface)}
         .input-field, .edit-input{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
         .input-field:focus, .edit-input:focus{outline:2px solid var(--primary-color);border-color:transparent}
-        .button{width:100%;padding:12px;border:none;border-radius:6px;background-color:var(--primary-color);color:#000;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:background-color .2s ease}
-        .button:hover{background-color:#a050f0}
+        .button, .sort-btn{padding:12px;border:none;border-radius:6px;background-color:var(--primary-color);color:#000;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:background-color .2s ease}
+        .button:hover, .sort-btn:hover{background-color:#a050f0}
         .button:disabled{background-color:#555;color:#999;cursor:not-allowed}
         #gallery-container{max-width:600px; margin: 0 auto;}
         #gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:16px}
@@ -38,19 +38,19 @@
         .edit-controls{display:flex;justify-content:space-between;margin-top:4px}
         .edit-controls button{background:0 0;border:0;cursor:pointer;padding:4px}
         .edit-controls svg{width:20px;height:20px}
-        #sort-container{display:flex;justify-content:center;gap:20px;margin-bottom:16px;font-size:14px}
-        #sort-container label{cursor:pointer;color:var(--text-on-surface);transition: color 0.2s;}
-        #sort-container input:checked + label{color:var(--primary-color);font-weight:600}
+        #sort-container{display:flex;justify-content:center;gap:10px;margin-bottom:16px;}
+        .sort-btn{font-size: 12px; padding: 8px 12px; width: 50%; background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-on-surface);}
+        .sort-btn.active{background-color: var(--primary-color); color: #000; border-color: var(--primary-color);}
         .edit-replace-section{margin-top:12px; padding-top:12px; border-top: 1px solid var(--border-color);}
         .edit-replace-section label{font-size:12px;}
+        /* BUGFIX: Constrain width of URL input in edit mode */
+        .edit-image-url { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Add New Word</h1>
         <div id="error-message"></div>
-        <!-- ... Form elements ... -->
         <div class="form-section"><label for="word">1. Enter a caption (word)</label><input type="text" id="word" class="input-field" placeholder="e.g., Innovation"></div>
         <div class="form-section"><label for="image-url">2a. Paste an image URL</label><input type="text" id="image-url" class="input-field" placeholder="https://..."></div>
         <div class="or-separator">OR</div>
@@ -61,8 +61,8 @@
 
     <div id="gallery-container">
         <div id="sort-container">
-            <input type="radio" name="sort" id="sort-alpha" checked style="display:none;"><label for="sort-alpha">Sort by Name (A-Z)</label>
-            <input type="radio" name="sort" id="sort-date" style="display:none;"><label for="sort-date">Sort by Date (Newest)</label>
+            <button id="sort-name-btn" class="sort-btn">Sort by Name</button>
+            <button id="sort-date-btn" class="sort-btn">Sort by Date</button>
         </div>
         <div id="gallery"></div>
     </div>
@@ -75,28 +75,15 @@
     </svg>
 
     <script>
-        // Constants
-        const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortAlpha = document.getElementById('sort-alpha'), sortDate = document.getElementById('sort-date');
+        const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortNameBtn = document.getElementById('sort-name-btn'), sortDateBtn = document.getElementById('sort-date-btn');
         const STORAGE_LIMIT = 5 * 1024 * 1024, COMPRESSION_QUALITY = 0.75, MAX_DIMENSION = 300;
         
-        // State
-        let words = [];
-        let currentSort = 'alpha';
+        let words = [], editingItemId = null;
+        let sortState = { type: 'name', direction: 'asc' }; // 'name' or 'date', 'asc' or 'desc'
 
-        // NEW: UUID Generator
-        function generateUUID() {
-            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
-        }
-
-        // --- Core Data Functions ---
-        function saveWords() {
-            try {
-                const data = JSON.stringify(words);
-                if (data.length > STORAGE_LIMIT) { displayError('Storage limit exceeded!'); loadWords(); return false; }
-                localStorage.setItem('galleryWords', data);
-                renderGallery(); return true;
-            } catch (e) { displayError('Failed to save data.'); return false; }
-        }
+        function generateUUID() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+        
+        function saveWords() { try { const d=JSON.stringify(words); if(d.length > STORAGE_LIMIT){displayError('Storage limit exceeded!');loadWords();return false}localStorage.setItem('galleryWords',d);renderGallery();return true}catch(e){displayError('Failed to save data.');return false} }
 
         function loadWords() {
             const saved = localStorage.getItem('galleryWords');
@@ -105,145 +92,125 @@
                     words = JSON.parse(saved);
                     let needsSave = false;
                     words.forEach(w => {
-                        if (!w.id) { w.id = generateUUID(); needsSave = true; } // Migration for items without UUID
-                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random()*100000; needsSave = true; } // Migration for items without timestamp
+                        if (!w.id) { w.id = generateUUID(); needsSave = true; }
+                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random()*100000; needsSave = true; }
                     });
-                    if (needsSave) {
-                        // Use a timeout to prevent race conditions on initial load
-                        setTimeout(() => saveWords(), 0);
-                    }
+                    if (needsSave) setTimeout(() => saveWords(), 0);
                 } catch(e) { words = []; displayError("Could not load saved data."); }
             }
             renderGallery();
         }
 
-        // --- Rendering ---
-        function renderGallery(editingItemId = null) {
+        function renderGallery() {
             gallery.innerHTML = '';
             let sorted = [...words];
-            if (currentSort === 'alpha') sorted.sort((a, b) => a.word.localeCompare(b.word));
-            else sorted.sort((a, b) => b.timestamp - a.timestamp);
+            if (sortState.type === 'name') {
+                sorted.sort((a, b) => a.word.localeCompare(b.word));
+                if (sortState.direction === 'desc') sorted.reverse();
+            } else { // date
+                sorted.sort((a, b) => a.timestamp - b.timestamp); // BUGFIX: Oldest first is natural asc
+                if (sortState.direction === 'asc') sorted.reverse(); // Newest first is actually desc
+            }
+
+            // Update sort button text
+            sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
+            sortDateBtn.textContent = `Sort by Date ${sortState.type === 'date' ? (sortState.direction === 'asc' ? '(Newest)' : '(Oldest)') : ''}`;
+            sortNameBtn.classList.toggle('active', sortState.type === 'name');
+            sortDateBtn.classList.toggle('active', sortState.type === 'date');
 
             sorted.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
-                div.setAttribute('data-id', item.id); // Use the immutable UUID
-
+                div.setAttribute('data-id', item.id);
                 const isEditing = item.id === editingItemId;
                 div.innerHTML = `<img src="${item.image}" alt="${item.word}"><div class="gallery-item-footer"></div>`;
                 const footer = div.querySelector('.gallery-item-footer');
-
                 if (isEditing) {
-                    footer.innerHTML = `
-                        <input type="text" class="edit-input" value="${item.word}">
-                        <div class="edit-replace-section">
-                            <label>Replace Image (Optional)</label>
-                            <input type="text" class="edit-image-url" placeholder="New image URL...">
-                            <input type="file" class="edit-image-file" style="width:100%; font-size: 10px;">
-                        </div>
-                        <div class="edit-controls">
-                            <button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button>
-                            <button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button>
-                        </div>`;
+                    footer.innerHTML = `<input type="text" class="edit-input" value="${item.word}"><div class="edit-replace-section"><label>Replace Image (Optional)</label><input type="text" class="edit-image-url" placeholder="New image URL..."><input type="file" class="edit-image-file" style="width:100%; font-size: 10px;"></div><div class="edit-controls"><button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button><button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button></div>`;
                 } else {
                     footer.innerHTML = `<p>${item.word}</p>`;
                 }
-                
-                // Always add action buttons, but they will be covered by edit UI if active
                 const editBtn = document.createElement('button'); editBtn.className = 'action-btn edit-btn'; editBtn.title = 'Edit'; editBtn.innerHTML = '<svg><use href="#icon-pencil"/></svg>';
                 const delBtn = document.createElement('button'); delBtn.className = 'action-btn delete-btn'; delBtn.title = 'Delete'; delBtn.innerHTML = '<svg><use href="#icon-trash"/></svg>';
-                div.appendChild(editBtn);
-                div.appendChild(delBtn);
-                
+                div.appendChild(editBtn); div.appendChild(delBtn);
                 gallery.appendChild(div);
             });
             updateStorageInfo();
         }
         
-        // --- Event Listeners ---
         gallery.addEventListener('click', e => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-
-            const itemDiv = btn.closest('.gallery-item');
-            if (!itemDiv) return;
-
-            const id = itemDiv.getAttribute('data-id');
-            if (!id) return;
+            const btn = e.target.closest('button'); if (!btn) return;
+            const itemDiv = btn.closest('.gallery-item'); if (!itemDiv) return;
+            const id = itemDiv.getAttribute('data-id'); if (!id) return;
             
-            const index = words.findIndex(w => w.id === id);
-            if (index === -1) return;
-
             if (btn.classList.contains('edit-btn')) {
-                renderGallery(id); // Re-render with the specific item in edit mode
-                const input = itemDiv.querySelector('.edit-input');
-                if(input) { input.focus(); input.select(); }
+                // FEATURE: Clicking edit again closes the panel
+                if (editingItemId === id) { editingItemId = null; } 
+                else { editingItemId = id; }
+                renderGallery();
+                if (editingItemId) { const input = gallery.querySelector(`[data-id="${id}"] .edit-input`); if (input) { input.focus(); input.select(); } }
             } 
             else if (btn.classList.contains('delete-btn')) {
-                if (confirm(`Delete "${words[index].word}"?`)) {
-                    words.splice(index, 1);
-                    saveWords();
-                }
+                const index = words.findIndex(w => w.id === id); if (index === -1) return;
+                if (confirm(`Delete "${words[index].word}"?`)) { words.splice(index, 1); editingItemId = null; saveWords(); }
             } 
             else if (btn.classList.contains('cancel-edit-btn')) {
-                renderGallery(); // Just re-render everything normally
+                editingItemId = null; renderGallery();
             } 
             else if (btn.classList.contains('save-edit-btn')) {
-                const newWord = itemDiv.querySelector('.edit-input').value.trim();
-                const newUrl = itemDiv.querySelector('.edit-image-url').value.trim();
-                const newFile = itemDiv.querySelector('.edit-image-file').files[0];
-                const hasNewWord = newWord && newWord !== words[index].word;
-                const hasNewImage = newUrl || newFile;
-
-                if (!hasNewWord && !hasNewImage) { renderGallery(); return; }
+                const index = words.findIndex(w => w.id === id); if (index === -1) return;
+                const newWord = itemDiv.querySelector('.edit-input').value.trim(), newUrl = itemDiv.querySelector('.edit-image-url').value.trim(), newFile = itemDiv.querySelector('.edit-image-file').files[0];
+                const hasNewWord = newWord && newWord !== words[index].word, hasNewImage = newUrl || newFile;
+                if (!hasNewWord && !hasNewImage) { editingItemId = null; renderGallery(); return; }
                 if (hasNewWord) { words[index].word = newWord; }
-                
-                const handleError = msg => { displayError(msg); renderGallery(); };
+                const handleError = msg => { displayError(msg); editingItemId = null; renderGallery(); };
                 if (hasNewImage) {
-                    const handleNewImage = imgData => { words[index].image = imgData; saveWords(); };
+                    const handleNewImage = imgData => { words[index].image = imgData; editingItemId = null; saveWords(); };
                     if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
                     else handleImageBlob(newFile, handleNewImage, handleError);
                 } else if (hasNewWord) {
-                    saveWords();
+                    editingItemId = null; saveWords();
                 }
             }
         });
         
-        // Add new item logic
         addBtn.addEventListener("click", () => {
             hideError(); addBtn.disabled = true; addBtn.textContent = 'Adding...';
             const word = wordInput.value.trim(), url = imageUrlInput.value.trim(), file = imageFileInput.files[0];
             const cleanup = () => { addBtn.disabled = false; addBtn.textContent = 'Add to Gallery'; };
             const handleError = msg => { displayError(msg); cleanup(); };
-            
             if (!word || (!url && !file)) return handleError('Please provide a word and an image.');
             if (url && file) return handleError('Use either a URL or a file, not both.');
             if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) return handleError(`Word "${word}" already exists.`);
-            
             const addItem = imgData => {
                 words.push({ word, image: imgData, id: generateUUID(), timestamp: Date.now() });
-                if (saveWords()) { wordInput.value = ''; imageUrlInput.value = ''; imageFileInput.value = ''; }
+                editingItemId = null; if (saveWords()) { wordInput.value = ''; imageUrlInput.value = ''; imageFileInput.value = ''; }
                 cleanup();
             };
-            
-            if (url) toDataURL(url, addItem, handleError);
-            else if (file) handleImageBlob(file, addItem, handleError);
+            if (url) toDataURL(url, addItem, handleError); else if (file) handleImageBlob(file, addItem, handleError);
         });
 
-        // Sort listeners
-        sortAlpha.addEventListener('change', () => { if (sortAlpha.checked) { currentSort = 'alpha'; renderGallery(); }});
-        sortDate.addEventListener('change', () => { if (sortDate.checked) { currentSort = 'date'; renderGallery(); }});
-
-        // --- Utility Functions (unchanged) ---
-        function updateStorageInfo() { /* ... */ const u=(localStorage.getItem("galleryWords")||"").length;storageInfo.textContent=`Storage: ${(u/1024).toFixed(2)} KB / ~${(STORAGE_LIMIT/1024/1024).toFixed(2)} MB used`,storageBarFill.style.width=`${Math.min(u/STORAGE_LIMIT*100,100)}%`; }
-        function displayError(msg) { /* ... */ errorMessage.textContent=msg,errorMessage.style.display="block" }
-        function hideError() { /* ... */ errorMessage.style.display="none" }
+        sortNameBtn.addEventListener('click', () => {
+            if (sortState.type === 'name') { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } 
+            else { sortState.type = 'name'; sortState.direction = 'asc'; }
+            editingItemId = null; renderGallery();
+        });
+        sortDateBtn.addEventListener('click', () => {
+            if (sortState.type === 'date') { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } 
+            else { sortState.type = 'date'; sortState.direction = 'asc'; }
+            editingItemId = null; renderGallery();
+        });
+        
+        function updateStorageInfo() { const u=(localStorage.getItem("galleryWords")||"").length;storageInfo.textContent=`Storage: ${(u/1024).toFixed(2)} KB / ~${(STORAGE_LIMIT/1024/1024).toFixed(2)} MB used`,storageBarFill.style.width=`${Math.min(u/STORAGE_LIMIT*100,100)}%`; }
+        function displayError(msg) { errorMessage.textContent=msg,errorMessage.style.display="block" }
+        function hideError() { errorMessage.style.display="none" }
         function compressImage(blob, cb, errCb) { const i=new Image;i.src=URL.createObjectURL(blob),i.onload=()=>{const b=document.createElement("canvas"),c=b.getContext("2d");let{width:w,height:h}=i;w>h?w>MAX_DIMENSION&&(h*=MAX_DIMENSION/w,w=MAX_DIMENSION):h>MAX_DIMENSION&&(w*=MAX_DIMENSION/h,h=MAX_DIMENSION),b.width=w,b.height=h,c.drawImage(i,0,0,w,h),cb(b.toDataURL("image/jpeg",COMPRESSION_QUALITY))},i.onerror=()=>errCb("Could not process image file.") }
         function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
         function toDataURL(url, cb, errCb) { const p="https://api.allorigins.win/raw?url=";let f;try{f=p+encodeURIComponent(url)}catch(e){return errCb("Invalid URL.")}const x=new XMLHttpRequest;x.onload=()=>x.status>=400?errCb(`Fetch error: ${x.status}`):handleImageBlob(x.response,cb,errCb),x.onerror=()=>errCb("Network error."),x.open("GET",f),x.responseType="blob",x.send() }
         
-        // Initial Load
         loadWords();
     </script>
 </body>
 </html>
+
+
