@@ -241,7 +241,7 @@
             gallery.innerHTML = '';
             const sortedWords = [...words].sort((a, b) => a.word.localeCompare(b.word));
             sortedWords.forEach((item) => {
-                const originalIndex = words.indexOf(item);
+                const originalIndex = words.findIndex(w => w.word === item.word && w.image === item.image);
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
                 div.innerHTML = `
@@ -296,15 +296,29 @@
                     words = [];
                     displayError("Could not load saved data. It might be corrupted.");
                 }
+            } else {
+                 updateStorageInfo(); // Update storage info on first load
             }
         }
         
         function toDataURL(url, callback) {
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const finalUrl = proxyUrl + url;
+            // Using a more robust CORS proxy
+            const proxyUrl = 'https://api.allorigins.win/raw?url=';
+            let finalUrl;
+            try {
+                // Properly encode the target URL
+                finalUrl = proxyUrl + encodeURIComponent(url);
+            } catch (e) {
+                displayError("The provided URL is invalid.");
+                return;
+            }
 
             const xhr = new XMLHttpRequest();
             xhr.onload = function() {
+                if (xhr.status >= 400) {
+                    displayError(`Failed to fetch image. The proxy reported an error (Status: ${xhr.status}).`);
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onloadend = function() {
                     if (reader.result.length > MAX_SIZE * 1.4) {
@@ -317,7 +331,7 @@
                 reader.readAsDataURL(xhr.response);
             };
             xhr.onerror = function() {
-                 displayError("Failed to fetch image. The URL might be wrong or blocked by CORS policy.");
+                 displayError("Failed to fetch image. Check your network or if the proxy is down.");
             }
             xhr.open('GET', finalUrl);
             xhr.responseType = 'blob';
@@ -348,6 +362,11 @@
             }
 
             const addItem = (imageData) => {
+                // Check if an entry with the same word already exists
+                if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) {
+                    displayError(`The word "${word}" already exists in the gallery.`);
+                    return;
+                }
                 words.push({ word, image: imageData });
                 if (saveWords()) {
                     wordInput.value = '';
@@ -375,8 +394,10 @@
         gallery.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-btn')) {
                 const index = parseInt(e.target.getAttribute('data-index'), 10);
-                words.splice(index, 1);
-                saveWords();
+                if (index >= 0 && index < words.length) {
+                    words.splice(index, 1);
+                    saveWords();
+                }
             }
         });
 
