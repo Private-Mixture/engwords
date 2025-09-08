@@ -80,7 +80,6 @@
         <div id="gallery"></div>
     </div>
     
-    <!-- BUGFIX: Restored the full SVG icon definitions -->
     <svg style="display:none;">
         <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
         <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="#03dac6"/></symbol>
@@ -131,7 +130,6 @@
             else sorted.sort((a, b) => b.timestamp - a.timestamp);
 
             sorted.forEach(item => {
-                // BUGFIX: Always use the immutable timestamp to find the original item
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
                 div.setAttribute('data-timestamp', item.timestamp);
@@ -145,8 +143,9 @@
             const timestamp = Number(itemDiv.getAttribute('data-timestamp'));
             const index = words.findIndex(w => w.timestamp === timestamp);
             if (index === -1) return;
-
-            const item = words[index], footer = itemDiv.querySelector('.gallery-item-footer');
+            const item = words[index];
+            
+            const footer = itemDiv.querySelector('.gallery-item-footer');
             footer.innerHTML = `
                 <input type="text" class="edit-input" value="${item.word}">
                 <div class="edit-replace-section">
@@ -156,36 +155,57 @@
                 </div>
                 <div class="edit-controls"><button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button><button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button></div>`;
             const input = footer.querySelector('.edit-input');
-            input.focus(); input.select();
+            input.focus();
+            input.select();
         }
 
-        // BUGFIX: Centralized and robust event handler for the entire gallery
+        // Complete rewrite of the event listener logic for robustness
         gallery.addEventListener('click', e => {
-            const btn = e.target.closest('button');
+            const targetElement = e.target;
+            const btn = targetElement.closest('button');
             if (!btn) return;
+
             const itemDiv = btn.closest('.gallery-item');
             if (!itemDiv) return;
+
             const timestamp = Number(itemDiv.getAttribute('data-timestamp'));
+            if (isNaN(timestamp)) return;
+            
             const index = words.findIndex(w => w.timestamp === timestamp);
             if (index === -1) return;
 
             if (btn.classList.contains('delete-btn')) {
-                if (confirm(`Delete "${words[index].word}"?`)) { words.splice(index, 1); saveWords(); }
+                if (confirm(`Delete "${words[index].word}"?`)) {
+                    words.splice(index, 1);
+                    saveWords();
+                }
             } else if (btn.classList.contains('edit-btn')) {
-                renderGallery(); // Reset other items to non-edit mode
-                enterEditMode(itemDiv);
+                renderGallery(); // Reset other items to non-edit mode first
+                const currentItemDiv = gallery.querySelector(`[data-timestamp="${timestamp}"]`);
+                if(currentItemDiv) enterEditMode(currentItemDiv);
             } else if (btn.classList.contains('cancel-edit-btn')) {
                 renderGallery();
             } else if (btn.classList.contains('save-edit-btn')) {
-                const newWord = itemDiv.querySelector('.edit-input').value.trim(), newUrl = itemDiv.querySelector('.edit-image-url').value.trim(), newFile = itemDiv.querySelector('.edit-image-file').files[0];
-                const hasNewWord = newWord && newWord !== words[index].word, hasNewImage = newUrl || newFile;
+                const newWord = itemDiv.querySelector('.edit-input').value.trim();
+                const newUrl = itemDiv.querySelector('.edit-image-url').value.trim();
+                const newFile = itemDiv.querySelector('.edit-image-file').files[0];
+                const hasNewWord = newWord && newWord !== words[index].word;
+                const hasNewImage = newUrl || newFile;
 
-                if (!hasNewWord && !hasNewImage) { renderGallery(); return; }
-                if (hasNewWord) words[index].word = newWord;
-
-                const handleError = (msg) => { displayError(msg); renderGallery(); };
+                if (!hasNewWord && !hasNewImage) {
+                    renderGallery();
+                    return;
+                }
+                if (hasNewWord) {
+                    words[index].word = newWord;
+                }
+                
+                const handleError = msg => { displayError(msg); renderGallery(); };
                 if (hasNewImage) {
-                    const handleNewImage = (imgData) => { words[index].image = imgData; saveWords(); };
+                    const handleNewImage = imgData => {
+                        words[index].image = imgData;
+                        saveWords();
+                    };
                     if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
                     else handleImageBlob(newFile, handleNewImage, handleError);
                 } else if (hasNewWord) {
@@ -194,7 +214,6 @@
             }
         });
 
-        // ... Compression and fetching logic (no changes) ...
         function compressImage(blob, cb, errCb) {
             const img = new Image(); img.src = URL.createObjectURL(blob);
             img.onload = () => {
