@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Words Gallery</title>
+    <style>
+        :root {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --primary-variant-color: #3700b3;
+            --secondary-color: #03dac6;
+            --text-on-background: rgba(255, 255, 255, 0.87);
+            --text-on-surface: rgba(255, 255, 255, 0.6);
+            --border-color: rgba(255, 255, 255, 0.12);
+            --danger-color: #cf6679;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-on-background);
+            margin: 0;
+            padding: 16px;
+            font-size: 14px;
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile */
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 16px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 16px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+        .form-section {
+            margin-bottom: 16px;
+        }
+        .form-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-on-surface);
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            background-color: #2c2c2c;
+            color: var(--text-on-background);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .input-field:focus {
+            outline: 2px solid var(--primary-color);
+            border-color: transparent;
+        }
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary-color);
+            color: #000;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+        .button:hover {
+            background-color: #a050f0;
+        }
+        #gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .gallery-item {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #2c2c2c;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+        .gallery-item p {
+            margin: 0;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            background-color: rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            background-color: var(--danger-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 24px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .gallery-item:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .or-separator {
+            text-align: center;
+            margin: 16px 0;
+            color: var(--text-on-surface);
+            font-weight: 500;
+            font-size: 12px;
+        }
+        #storage-info {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-on-surface);
+            margin-top: 16px;
+        }
+        #error-message {
+            color: var(--danger-color);
+            font-weight: 500;
+            font-size: 13px;
+            text-align: center;
+            padding: 8px;
+            background-color: rgba(207, 102, 121, 0.1);
+            border-radius: 4px;
+            margin-bottom: 12px;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Add New Word</h1>
+        <div id="error-message"></div>
+        <div class="form-section">
+            <label for="word">1. Enter a caption (word)</label>
+            <input type="text" id="word" class="input-field" placeholder="e.g., Innovation">
+        </div>
+
+        <div class="form-section">
+            <label for="image-url">2a. Paste an image URL</label>
+            <input type="text" id="image-url" class="input-field" placeholder="https://...">
+        </div>
+
+        <div class="or-separator">OR</div>
+
+        <div class="form-section">
+             <label for="image-file">2b. Upload a file from your computer</label>
+             <input type="file" id="image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif">
+        </div>
+        
+        <button id="add-btn" class="button">Add to Gallery</button>
+
+        <div id="storage-info">Storage: 0.00 KB / ~5.00 MB used</div>
+    </div>
+
+    <div id="gallery"></div>
+
+    <script>
+        const wordInput = document.getElementById('word');
+        const imageUrlInput = document.getElementById('image-url');
+        const imageFileInput = document.getElementById('image-file');
+        const addBtn = document.getElementById('add-btn');
+        const gallery = document.getElementById('gallery');
+        const storageInfo = document.getElementById('storage-info');
+        const errorMessage = document.getElementById('error-message');
+        const MAX_SIZE = 200 * 1024; // 200 KB
+        const STORAGE_LIMIT = 5 * 1024 * 1024; // 5 MB
+
+        let words = [];
+
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        function renderGallery() {
+            gallery.innerHTML = '';
+            words.sort((a, b) => a.word.localeCompare(b.word)); // Sort alphabetically
+            words.forEach((item, index) => {
+                // We need to find the original index before sorting to make deletion work
+                const originalIndex = words.indexOf(item);
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <img src="${item.image}" alt="${item.word}">
+                    <p>${item.word}</p>
+                    <button class="delete-btn" data-index="${originalIndex}">&times;</button>
+                `;
+                gallery.appendChild(div);
+            });
+            updateStorageInfo();
+        }
+
+        function updateStorageInfo() {
+            try {
+                const currentUsage = (localStorage.getItem('galleryWords') || '').length;
+                const usageKB = (currentUsage / 1024).toFixed(2);
+                const limitMB = (STORAGE_LIMIT / (1024 * 1024)).toFixed(2);
+                storageInfo.textContent = `Storage: ${usageKB} KB / ~${limitMB} MB used`;
+            } catch (e) {
+                storageInfo.textContent = "Could not calculate storage usage.";
+            }
+        }
+
+        function saveWords() {
+            try {
+                const data = JSON.stringify(words);
+                if (data.length > STORAGE_LIMIT) {
+                    displayError('Storage limit exceeded! Cannot save new item.');
+                    // Don't save the oversized data
+                    loadWords(); // Revert to the last saved state
+                    return false;
+                }
+                localStorage.setItem('galleryWords', data);
+                renderGallery();
+                return true;
+            } catch (e) {
+                displayError('Failed to save data. Storage might be full.');
+                return false;
+            }
+        }
+
+        function loadWords() {
+            const savedWords = localStorage.getItem('galleryWords');
+            if (savedWords) {
+                try {
+                    words = JSON.parse(savedWords);
+                    renderGallery();
+                } catch(e) {
+                    words = [];
+                    displayError("Could not load saved data. It might be corrupted.");
+                }
+            }
+        }
+        
+        function toDataURL(url, callback) {
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const finalUrl = proxyUrl + url;
+
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    if (reader.result.length > MAX_SIZE * 1.4) {
+                         displayError(`Image is too large after processing. Please use a smaller image (under ${Math.round(MAX_SIZE/1024)} KB).`);
+                         return;
+                    }
+                    callback(reader.result);
+                }
+                reader.onerror = () => displayError('Could not process the fetched image.');
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.onerror = function() {
+                 displayError("Failed to fetch image. The URL might be wrong or blocked by CORS policy.");
+            }
+            xhr.open('GET', finalUrl);
+            xhr.responseType = 'blob';
+            xhr.send();
+        }
+
+        function fileToDataURL(file, callback) {
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                callback(reader.result);
+            }
+            reader.readAsDataURL(file);
+        }
+
+        addBtn.addEventListener('click', () => {
+            hideError();
+            const word = wordInput.value.trim();
+            const imageUrl = imageUrlInput.value.trim();
+            const imageFile = imageFileInput.files[0];
+
+            if (!word) {
+                displayError('Please enter a word or caption.');
+                return;
+            }
+            if (!imageUrl && !imageFile) {
+                displayError('Please provide an image URL or upload a file.');
+                return;
+            }
+
+            const addItem = (imageData) => {
+                words.push({ word, image: imageData });
+                if (saveWords()) {
+                    wordInput.value = '';
+                    imageUrlInput.value = '';
+                    imageFileInput.value = '';
+                }
+            };
+
+            if (imageUrl && imageFile) {
+                displayError("Please provide only one image source: either a URL or a file.");
+                return;
+            }
+
+            if (imageUrl) {
+                 toDataURL(imageUrl, addItem);
+            } else if (imageFile) {
+                if (imageFile.size > MAX_SIZE) {
+                    displayError(`File is too large (${(imageFile.size/1024).toFixed(0)} KB). Max size is ${MAX_SIZE/1024} KB.`);
+                    return;
+                }
+                fileToDataURL(imageFile, addItem);
+            }
+        });
+
+        gallery.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const index = parseInt(e.target.getAttribute('data-index'), 10);
+                words.splice(index, 1);
+                saveWords();
+            }
+        });
+
+        // Initial load
+        loadWords();
+    </script>
+</body>
+</html>
+
+
+Generated by Gemini 2.5 Pro
