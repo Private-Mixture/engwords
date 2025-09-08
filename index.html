@@ -50,32 +50,19 @@
     <div class="container">
         <h1>Add New Word</h1>
         <div id="error-message"></div>
-        <div class="form-section">
-            <label for="word">1. Enter a caption (word)</label>
-            <input type="text" id="word" class="input-field" placeholder="e.g., Innovation">
-        </div>
-        <div class="form-section">
-            <label for="image-url">2a. Paste an image URL</label>
-            <input type="text" id="image-url" class="input-field" placeholder="https://...">
-        </div>
+        <!-- ... Form elements ... -->
+        <div class="form-section"><label for="word">1. Enter a caption (word)</label><input type="text" id="word" class="input-field" placeholder="e.g., Innovation"></div>
+        <div class="form-section"><label for="image-url">2a. Paste an image URL</label><input type="text" id="image-url" class="input-field" placeholder="https://..."></div>
         <div class="or-separator">OR</div>
-        <div class="form-section">
-             <label for="image-file">2b. Upload a file from your computer</label>
-             <input type="file" id="image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif">
-        </div>
+        <div class="form-section"><label for="image-file">2b. Upload a file from your computer</label><input type="file" id="image-file" class="input-field" accept="image/jpeg, image/png, image/webp, image/gif"></div>
         <button id="add-btn" class="button">Add to Gallery</button>
-        <div id="storage-container">
-            <div id="storage-info"></div>
-            <div id="storage-bar-background"><div id="storage-bar-fill"></div></div>
-        </div>
+        <div id="storage-container"><div id="storage-info"></div><div id="storage-bar-background"><div id="storage-bar-fill"></div></div></div>
     </div>
 
     <div id="gallery-container">
         <div id="sort-container">
-            <input type="radio" name="sort" id="sort-alpha" checked style="display:none;">
-            <label for="sort-alpha">Sort by Name (A-Z)</label>
-            <input type="radio" name="sort" id="sort-date" style="display:none;">
-            <label for="sort-date">Sort by Date (Newest)</label>
+            <input type="radio" name="sort" id="sort-alpha" checked style="display:none;"><label for="sort-alpha">Sort by Name (A-Z)</label>
+            <input type="radio" name="sort" id="sort-date" style="display:none;"><label for="sort-date">Sort by Date (Newest)</label>
         </div>
         <div id="gallery"></div>
     </div>
@@ -88,19 +75,20 @@
     </svg>
 
     <script>
+        // Constants
         const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortAlpha = document.getElementById('sort-alpha'), sortDate = document.getElementById('sort-date');
         const STORAGE_LIMIT = 5 * 1024 * 1024, COMPRESSION_QUALITY = 0.75, MAX_DIMENSION = 300;
-        let words = [], currentSort = 'alpha';
-
-        function displayError(msg) { errorMessage.textContent = msg; errorMessage.style.display = 'block'; }
-        function hideError() { errorMessage.style.display = 'none'; }
         
-        function updateStorageInfo() {
-            const usage = (localStorage.getItem('galleryWords') || '').length, usageKB = (usage / 1024).toFixed(2), limitMB = (STORAGE_LIMIT / 1024 / 1024).toFixed(2);
-            storageInfo.textContent = `Storage: ${usageKB} KB / ~${limitMB} MB used`;
-            storageBarFill.style.width = `${Math.min((usage / STORAGE_LIMIT) * 100, 100)}%`;
+        // State
+        let words = [];
+        let currentSort = 'alpha';
+
+        // NEW: UUID Generator
+        function generateUUID() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
         }
 
+        // --- Core Data Functions ---
         function saveWords() {
             try {
                 const data = JSON.stringify(words);
@@ -113,17 +101,24 @@
         function loadWords() {
             const saved = localStorage.getItem('galleryWords');
             if (saved) {
-                try { 
+                try {
                     words = JSON.parse(saved);
                     let needsSave = false;
-                    words.forEach(w => { if (!w.timestamp) { w.timestamp = Date.now() - Math.random()*100000; needsSave = true; }});
-                    if (needsSave) saveWords();
+                    words.forEach(w => {
+                        if (!w.id) { w.id = generateUUID(); needsSave = true; } // Migration for items without UUID
+                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random()*100000; needsSave = true; } // Migration for items without timestamp
+                    });
+                    if (needsSave) {
+                        // Use a timeout to prevent race conditions on initial load
+                        setTimeout(() => saveWords(), 0);
+                    }
                 } catch(e) { words = []; displayError("Could not load saved data."); }
             }
             renderGallery();
         }
 
-        function renderGallery() {
+        // --- Rendering ---
+        function renderGallery(editingItemId = null) {
             gallery.innerHTML = '';
             let sorted = [...words];
             if (currentSort === 'alpha') sorted.sort((a, b) => a.word.localeCompare(b.word));
@@ -132,80 +127,80 @@
             sorted.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
-                div.setAttribute('data-timestamp', item.timestamp);
-                div.innerHTML = `<img src="${item.image}" alt="${item.word}"><div class="gallery-item-footer"><p>${item.word}</p></div><button class="action-btn edit-btn" title="Edit"><svg><use href="#icon-pencil"/></svg></button><button class="action-btn delete-btn" title="Delete"><svg><use href="#icon-trash"/></svg></button>`;
+                div.setAttribute('data-id', item.id); // Use the immutable UUID
+
+                const isEditing = item.id === editingItemId;
+                div.innerHTML = `<img src="${item.image}" alt="${item.word}"><div class="gallery-item-footer"></div>`;
+                const footer = div.querySelector('.gallery-item-footer');
+
+                if (isEditing) {
+                    footer.innerHTML = `
+                        <input type="text" class="edit-input" value="${item.word}">
+                        <div class="edit-replace-section">
+                            <label>Replace Image (Optional)</label>
+                            <input type="text" class="edit-image-url" placeholder="New image URL...">
+                            <input type="file" class="edit-image-file" style="width:100%; font-size: 10px;">
+                        </div>
+                        <div class="edit-controls">
+                            <button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button>
+                            <button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button>
+                        </div>`;
+                } else {
+                    footer.innerHTML = `<p>${item.word}</p>`;
+                }
+                
+                // Always add action buttons, but they will be covered by edit UI if active
+                const editBtn = document.createElement('button'); editBtn.className = 'action-btn edit-btn'; editBtn.title = 'Edit'; editBtn.innerHTML = '<svg><use href="#icon-pencil"/></svg>';
+                const delBtn = document.createElement('button'); delBtn.className = 'action-btn delete-btn'; delBtn.title = 'Delete'; delBtn.innerHTML = '<svg><use href="#icon-trash"/></svg>';
+                div.appendChild(editBtn);
+                div.appendChild(delBtn);
+                
                 gallery.appendChild(div);
             });
             updateStorageInfo();
         }
         
-        function enterEditMode(itemDiv) {
-            const timestamp = Number(itemDiv.getAttribute('data-timestamp'));
-            const index = words.findIndex(w => w.timestamp === timestamp);
-            if (index === -1) return;
-            const item = words[index];
-            
-            const footer = itemDiv.querySelector('.gallery-item-footer');
-            footer.innerHTML = `
-                <input type="text" class="edit-input" value="${item.word}">
-                <div class="edit-replace-section">
-                    <label>Replace Image (Optional)</label>
-                    <input type="text" class="edit-image-url" placeholder="New image URL...">
-                    <input type="file" class="edit-image-file" style="width:100%; font-size: 10px;">
-                </div>
-                <div class="edit-controls"><button class="save-edit-btn" title="Save"><svg><use href="#icon-check"/></svg></button><button class="cancel-edit-btn" title="Cancel"><svg><use href="#icon-cross"/></svg></button></div>`;
-            const input = footer.querySelector('.edit-input');
-            input.focus();
-            input.select();
-        }
-
-        // Complete rewrite of the event listener logic for robustness
+        // --- Event Listeners ---
         gallery.addEventListener('click', e => {
-            const targetElement = e.target;
-            const btn = targetElement.closest('button');
+            const btn = e.target.closest('button');
             if (!btn) return;
 
             const itemDiv = btn.closest('.gallery-item');
             if (!itemDiv) return;
 
-            const timestamp = Number(itemDiv.getAttribute('data-timestamp'));
-            if (isNaN(timestamp)) return;
+            const id = itemDiv.getAttribute('data-id');
+            if (!id) return;
             
-            const index = words.findIndex(w => w.timestamp === timestamp);
+            const index = words.findIndex(w => w.id === id);
             if (index === -1) return;
 
-            if (btn.classList.contains('delete-btn')) {
+            if (btn.classList.contains('edit-btn')) {
+                renderGallery(id); // Re-render with the specific item in edit mode
+                const input = itemDiv.querySelector('.edit-input');
+                if(input) { input.focus(); input.select(); }
+            } 
+            else if (btn.classList.contains('delete-btn')) {
                 if (confirm(`Delete "${words[index].word}"?`)) {
                     words.splice(index, 1);
                     saveWords();
                 }
-            } else if (btn.classList.contains('edit-btn')) {
-                renderGallery(); // Reset other items to non-edit mode first
-                const currentItemDiv = gallery.querySelector(`[data-timestamp="${timestamp}"]`);
-                if(currentItemDiv) enterEditMode(currentItemDiv);
-            } else if (btn.classList.contains('cancel-edit-btn')) {
-                renderGallery();
-            } else if (btn.classList.contains('save-edit-btn')) {
+            } 
+            else if (btn.classList.contains('cancel-edit-btn')) {
+                renderGallery(); // Just re-render everything normally
+            } 
+            else if (btn.classList.contains('save-edit-btn')) {
                 const newWord = itemDiv.querySelector('.edit-input').value.trim();
                 const newUrl = itemDiv.querySelector('.edit-image-url').value.trim();
                 const newFile = itemDiv.querySelector('.edit-image-file').files[0];
                 const hasNewWord = newWord && newWord !== words[index].word;
                 const hasNewImage = newUrl || newFile;
 
-                if (!hasNewWord && !hasNewImage) {
-                    renderGallery();
-                    return;
-                }
-                if (hasNewWord) {
-                    words[index].word = newWord;
-                }
+                if (!hasNewWord && !hasNewImage) { renderGallery(); return; }
+                if (hasNewWord) { words[index].word = newWord; }
                 
                 const handleError = msg => { displayError(msg); renderGallery(); };
                 if (hasNewImage) {
-                    const handleNewImage = imgData => {
-                        words[index].image = imgData;
-                        saveWords();
-                    };
+                    const handleNewImage = imgData => { words[index].image = imgData; saveWords(); };
                     if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
                     else handleImageBlob(newFile, handleNewImage, handleError);
                 } else if (hasNewWord) {
@@ -213,39 +208,20 @@
                 }
             }
         });
-
-        function compressImage(blob, cb, errCb) {
-            const img = new Image(); img.src = URL.createObjectURL(blob);
-            img.onload = () => {
-                const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'); let { width: w, height: h } = img;
-                if (w > h) { if (w > MAX_DIMENSION) h *= MAX_DIMENSION / w, w = MAX_DIMENSION; } else if (h > MAX_DIMENSION) w *= MAX_DIMENSION / h, h = MAX_DIMENSION;
-                canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h); cb(canvas.toDataURL('image/jpeg', COMPRESSION_QUALITY));
-            };
-            img.onerror = () => errCb("Could not process image file.");
-        }
-        function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
-        function toDataURL(url, cb, errCb) {
-            const proxy = 'https://api.allorigins.win/raw?url='; let finalUrl;
-            try { finalUrl = proxy + encodeURIComponent(url); } catch(e) { return errCb("Invalid URL."); }
-            const xhr = new XMLHttpRequest();
-            xhr.onload = () => xhr.status >= 400 ? errCb(`Fetch error: ${xhr.status}`) : handleImageBlob(xhr.response, cb, errCb);
-            xhr.onerror = () => errCb("Network error.");
-            xhr.open('GET', finalUrl); xhr.responseType = 'blob'; xhr.send();
-        }
-
+        
+        // Add new item logic
         addBtn.addEventListener("click", () => {
             hideError(); addBtn.disabled = true; addBtn.textContent = 'Adding...';
             const word = wordInput.value.trim(), url = imageUrlInput.value.trim(), file = imageFileInput.files[0];
             const cleanup = () => { addBtn.disabled = false; addBtn.textContent = 'Add to Gallery'; };
             const handleError = msg => { displayError(msg); cleanup(); };
             
-            if (!word) return handleError('Please enter a word.');
-            if (!url && !file) return handleError('Please provide an image.');
-            if (url && file) return handleError('Use either a URL or a file.');
+            if (!word || (!url && !file)) return handleError('Please provide a word and an image.');
+            if (url && file) return handleError('Use either a URL or a file, not both.');
             if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) return handleError(`Word "${word}" already exists.`);
             
             const addItem = imgData => {
-                words.push({ word, image: imgData, timestamp: Date.now() });
+                words.push({ word, image: imgData, id: generateUUID(), timestamp: Date.now() });
                 if (saveWords()) { wordInput.value = ''; imageUrlInput.value = ''; imageFileInput.value = ''; }
                 cleanup();
             };
@@ -253,10 +229,20 @@
             if (url) toDataURL(url, addItem, handleError);
             else if (file) handleImageBlob(file, addItem, handleError);
         });
-        
+
+        // Sort listeners
         sortAlpha.addEventListener('change', () => { if (sortAlpha.checked) { currentSort = 'alpha'; renderGallery(); }});
         sortDate.addEventListener('change', () => { if (sortDate.checked) { currentSort = 'date'; renderGallery(); }});
+
+        // --- Utility Functions (unchanged) ---
+        function updateStorageInfo() { /* ... */ const u=(localStorage.getItem("galleryWords")||"").length;storageInfo.textContent=`Storage: ${(u/1024).toFixed(2)} KB / ~${(STORAGE_LIMIT/1024/1024).toFixed(2)} MB used`,storageBarFill.style.width=`${Math.min(u/STORAGE_LIMIT*100,100)}%`; }
+        function displayError(msg) { /* ... */ errorMessage.textContent=msg,errorMessage.style.display="block" }
+        function hideError() { /* ... */ errorMessage.style.display="none" }
+        function compressImage(blob, cb, errCb) { const i=new Image;i.src=URL.createObjectURL(blob),i.onload=()=>{const b=document.createElement("canvas"),c=b.getContext("2d");let{width:w,height:h}=i;w>h?w>MAX_DIMENSION&&(h*=MAX_DIMENSION/w,w=MAX_DIMENSION):h>MAX_DIMENSION&&(w*=MAX_DIMENSION/h,h=MAX_DIMENSION),b.width=w,b.height=h,c.drawImage(i,0,0,w,h),cb(b.toDataURL("image/jpeg",COMPRESSION_QUALITY))},i.onerror=()=>errCb("Could not process image file.") }
+        function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
+        function toDataURL(url, cb, errCb) { const p="https://api.allorigins.win/raw?url=";let f;try{f=p+encodeURIComponent(url)}catch(e){return errCb("Invalid URL.")}const x=new XMLHttpRequest;x.onload=()=>x.status>=400?errCb(`Fetch error: ${x.status}`):handleImageBlob(x.response,cb,errCb),x.onerror=()=>errCb("Network error."),x.open("GET",f),x.responseType="blob",x.send() }
         
+        // Initial Load
         loadWords();
     </script>
 </body>
