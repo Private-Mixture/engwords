@@ -4,41 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Words Gallery</title>
-    <!-- FAVICON: A simple, elegant SVG icon generated directly from code -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%2280%22 height=%2280%22 x=%2210%22 y=%2210%22 rx=%2215%22 ry=%2215%22 fill=%22%23bb86fc%22 /><text x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23121212%22 font-family=%22sans-serif%22 font-weight=%22bold%22>W+</text></svg>">
     <style>
-        :root {
-            --background-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #bb86fc;
-            --text-on-background: rgba(255, 255, 255, 0.87);
-            --text-on-surface: rgba(255, 255, 255, 0.6);
-            --border-color: rgba(255, 255, 255, 0.12);
-            --danger-color: #cf6679;
-        }
-        /* ... (rest of the styles remain the same) ... */
+        :root{--background-color:#121212;--surface-color:#1e1e1e;--primary-color:#bb86fc;--text-on-background:rgba(255,255,255,.87);--text-on-surface:rgba(255,255,255,.6);--border-color:rgba(255,255,255,.12);--danger-color:#cf6679;--success-color:#03dac6}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--background-color);color:var(--text-on-background);margin:0;padding:16px;font-size:14px;overscroll-behavior-y:contain}
         .container{max-width:600px;margin:0 auto;background-color:var(--surface-color);border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,.2);padding:16px}
         h1{font-size:24px;font-weight:600;margin:0 0 16px;text-align:center;color:var(--primary-color)}
         .form-section{margin-bottom:16px}
         .form-section label{display:block;margin-bottom:8px;font-weight:500;color:var(--text-on-surface)}
-        .input-field{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
-        .input-field:focus{outline:2px solid var(--primary-color);border-color:transparent}
+        .input-field, .edit-input{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
+        .input-field:focus, .edit-input:focus{outline:2px solid var(--primary-color);border-color:transparent}
         .button{width:100%;padding:12px;border:none;border-radius:6px;background-color:var(--primary-color);color:#000;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:background-color .2s ease}
         .button:hover{background-color:#a050f0}
+        .button:disabled{background-color:#555;cursor:not-allowed}
         #gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:24px}
         .gallery-item{position:relative;border-radius:6px;overflow:hidden;background-color:#2c2c2c;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .2s ease,box-shadow .2s ease}
         .gallery-item:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.4)}
         .gallery-item img{width:100%;height:120px;object-fit:cover;display:block}
-        .gallery-item p{margin:0;padding:8px;text-align:center;font-size:14px;font-weight:500;background-color:rgba(0,0,0,.3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .delete-btn{position:absolute;top:6px;right:6px;width:24px;height:24px;background-color:var(--danger-color);color:var(--background-color);border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:24px;text-align:center;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s}
-        .gallery-item:hover .delete-btn{opacity:1;transform:scale(1)}
+        .gallery-item-footer{padding:8px}
+        .gallery-item-footer p{margin:0;text-align:center;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .action-btn{position:absolute;top:6px;width:24px;height:24px;border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:24px;text-align:center;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center}
+        .action-btn svg{width:14px;height:14px;fill:var(--background-color)}
+        .delete-btn{right:6px;background-color:var(--danger-color)}
+        .edit-btn{right:36px;background-color:var(--text-on-surface)}
+        .gallery-item:hover .action-btn{opacity:1;transform:scale(1)}
         .or-separator{text-align:center;margin:16px 0;color:var(--text-on-surface);font-weight:500;font-size:12px}
         #storage-container{margin-top:16px}
         #storage-info{text-align:center;font-size:12px;color:var(--text-on-surface);margin-bottom:6px}
         #storage-bar-background{width:100%;height:8px;background-color:#2c2c2c;border-radius:4px;overflow:hidden;border:1px solid var(--border-color)}
         #storage-bar-fill{width:0%;height:100%;background-color:var(--primary-color);border-radius:4px;transition:width .3s ease-out}
         #error-message{color:var(--danger-color);font-weight:500;font-size:13px;text-align:center;padding:8px;background-color:rgba(207,102,121,.1);border-radius:4px;margin-bottom:12px;display:none}
+        .edit-controls{display:flex;justify-content:space-between;margin-top:4px}
+        .edit-controls button{background:0 0;border:0;cursor:pointer;padding:4px}
+        .edit-controls svg{width:20px;height:20px}
     </style>
 </head>
 <body>
@@ -74,8 +72,16 @@
     </div>
 
     <div id="gallery"></div>
+    
+    <!-- SVG icons for reuse -->
+    <svg style="display:none;">
+        <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="M17.3,6.2L14.8,3.7c-0.4-0.4-1-0.4-1.4,0l-9,9C4.1,13,4,13.5,4,14v4c0,0.6,0.4,1,1,1h4c0.5,0,1-0.1,1.4-0.4l9-9 C20.2,9,19.8,8.2,19.4,7.8z M8.3,16H6v-2.3l7.4-7.4l2.3,2.3L8.3,16z"/></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9,16.2L4.8,12l-1.4,1.4L9,19L21,7l-1.4-1.4L9,16.2z" fill="#03dac6"/></symbol>
+        <symbol id="icon-cross" viewBox="0 0 24 24"><path d="M19,6.4L17.6,5L12,10.6L6.4,5L5,6.4L10.6,12L5,17.6L6.4,19L12,13.4L17.6,19L19,17.6L13.4,12L19,6.4z" fill="#cf6679"/></symbol>
+    </svg>
 
     <script>
+        // ... (variable declarations are the same)
         const wordInput = document.getElementById('word');
         const imageUrlInput = document.getElementById('image-url');
         const imageFileInput = document.getElementById('image-file');
@@ -85,59 +91,22 @@
         const storageBarFill = document.getElementById('storage-bar-fill');
         const errorMessage = document.getElementById('error-message');
         
-        const STORAGE_LIMIT = 5 * 1024 * 1024; // 5 MB
-        const COMPRESSION_QUALITY = 0.75; // 75% JPEG quality
-        const MAX_DIMENSION = 300; // Resize to 300px max width/height
+        const STORAGE_LIMIT = 5 * 1024 * 1024;
+        const COMPRESSION_QUALITY = 0.75;
+        const MAX_DIMENSION = 300;
 
         let words = [];
 
-        function displayError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
-        
-        function hideError() {
-            errorMessage.style.display = 'none';
-        }
-
-        function renderGallery() {
-            gallery.innerHTML = '';
-            const sortedWords = [...words].sort((a, b) => a.word.localeCompare(b.word));
-            sortedWords.forEach((item) => {
-                const originalIndex = words.findIndex(w => w.word === item.word && w.image === item.image);
-                const div = document.createElement('div');
-                div.className = 'gallery-item';
-                div.innerHTML = `
-                    <img src="${item.image}" alt="${item.word}">
-                    <p>${item.word}</p>
-                    <button class="delete-btn" data-index="${originalIndex}">&times;</button>
-                `;
-                gallery.appendChild(div);
-            });
-            updateStorageInfo();
-        }
-
-        function updateStorageInfo() {
-            try {
-                const currentUsage = (localStorage.getItem('galleryWords') || '').length;
-                const usageKB = (currentUsage / 1024).toFixed(2);
-                const limitMB = (STORAGE_LIMIT / (1024 * 1024)).toFixed(2);
-                storageInfo.textContent = `Storage: ${usageKB} KB / ~${limitMB} MB used`;
-
-                const percentage = Math.min((currentUsage / STORAGE_LIMIT) * 100, 100);
-                storageBarFill.style.width = `${percentage}%`;
-
-            } catch (e) {
-                storageInfo.textContent = "Could not calculate storage usage.";
-            }
-        }
+        function displayError(message) { /* ... same ... */ errorMessage.textContent=message,errorMessage.style.display="block"}
+        function hideError() { /* ... same ... */ errorMessage.style.display="none"}
+        function updateStorageInfo() { /* ... same ... */ try{const e=(localStorage.getItem("galleryWords")||"").length,t=(e/1024).toFixed(2),a=(STORAGE_LIMIT/1024/1024).toFixed(2);storageInfo.textContent=`Storage: ${t} KB / ~${a} MB used`;const o=Math.min(e/STORAGE_LIMIT*100,100);storageBarFill.style.width=`${o}%`}catch(e){storageInfo.textContent="Could not calculate storage usage."}}
 
         function saveWords() {
             try {
                 const data = JSON.stringify(words);
                 if (data.length > STORAGE_LIMIT) {
-                    displayError('Storage limit exceeded! Cannot save new item.');
-                    loadWords();
+                    displayError('Storage limit exceeded! Cannot save.');
+                    loadWords(); // Revert
                     return false;
                 }
                 localStorage.setItem('galleryWords', data);
@@ -152,149 +121,95 @@
         function loadWords() {
             const savedWords = localStorage.getItem('galleryWords');
             if (savedWords) {
-                try {
-                    words = JSON.parse(savedWords);
-                    renderGallery();
-                } catch(e) {
-                    words = [];
-                    displayError("Could not load saved data. It might be corrupted.");
-                }
-            } else {
-                 updateStorageInfo();
+                try { words = JSON.parse(savedWords); } 
+                catch(e) { words = []; displayError("Could not load saved data."); }
             }
+            renderGallery();
+            updateStorageInfo();
+        }
+
+        function renderGallery() {
+            gallery.innerHTML = '';
+            const sortedWords = [...words].sort((a, b) => a.word.localeCompare(b.word));
+            sortedWords.forEach((item) => {
+                const originalIndex = words.findIndex(w => w.word === item.word && w.image === item.image);
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.setAttribute('data-index', originalIndex);
+
+                div.innerHTML = `
+                    <img src="${item.image}" alt="${item.word}">
+                    <div class="gallery-item-footer">
+                        <p>${item.word}</p>
+                    </div>
+                    <button class="action-btn edit-btn" title="Rename word">
+                        <svg><use href="#icon-pencil"/></svg>
+                    </button>
+                    <button class="action-btn delete-btn" title="Delete word">
+                        <svg viewBox="0 0 24 24"><path d="M6,19c0,1.1,0.9,2,2,2h8c1.1,0,2-0.9,2-2V7H6V19z M19,4h-3.5l-1-1h-5l-1,1H5v2h14V4z"/></svg>
+                    </button>
+                `;
+                gallery.appendChild(div);
+            });
         }
         
-        /**
-         * NEW: Function to compress and resize an image from a Blob
-         */
-        function compressImage(blob, callback) {
-            const img = new Image();
-            img.src = URL.createObjectURL(blob);
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                let { width, height } = img;
-                if (width > height) {
-                    if (width > MAX_DIMENSION) {
-                        height *= MAX_DIMENSION / width;
-                        width = MAX_DIMENSION;
-                    }
-                } else {
-                    if (height > MAX_DIMENSION) {
-                        width *= MAX_DIMENSION / height;
-                        height = MAX_DIMENSION;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // Export as JPEG with specified quality
-                const dataUrl = canvas.toDataURL('image/jpeg', COMPRESSION_QUALITY);
-                callback(dataUrl);
-            };
-            img.onerror = () => {
-                displayError("Could not process the provided image file.");
-            };
+        function enterEditMode(itemDiv, index) {
+            const footer = itemDiv.querySelector('.gallery-item-footer');
+            const currentWord = words[index].word;
+            footer.innerHTML = `
+                <input type="text" class="edit-input" value="${currentWord}" autofocus>
+                <div class="edit-controls">
+                    <button class="save-edit-btn" title="Save">
+                        <svg><use href="#icon-check"/></svg>
+                    </button>
+                    <button class="cancel-edit-btn" title="Cancel">
+                        <svg><use href="#icon-cross"/></svg>
+                    </button>
+                </div>
+            `;
+            // Set focus and select text
+            const input = footer.querySelector('.edit-input');
+            input.focus();
+            input.select();
         }
-
-        function handleImageBlob(blob, callback) {
-            compressImage(blob, callback);
-        }
-
-        function toDataURL(url, callback) {
-            const proxyUrl = 'https://api.allorigins.win/raw?url=';
-            let finalUrl;
-            try {
-                finalUrl = proxyUrl + encodeURIComponent(url);
-            } catch (e) {
-                displayError("The provided URL is invalid.");
-                return;
-            }
-
-            const xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                if (xhr.status >= 400) {
-                    displayError(`Failed to fetch image (Status: ${xhr.status}).`);
-                    return;
-                }
-                // NEW: Pass the resulting blob to the compression function
-                handleImageBlob(xhr.response, callback);
-            };
-            xhr.onerror = function() {
-                 displayError("Failed to fetch image. Check your network or the URL.");
-            }
-            xhr.open('GET', finalUrl);
-            xhr.responseType = 'blob';
-            xhr.send();
-        }
-
-        addBtn.addEventListener('click', () => {
-            hideError();
-            addBtn.disabled = true; // Prevent double clicks
-            addBtn.textContent = 'Adding...';
-
-            const word = wordInput.value.trim();
-            const imageUrl = imageUrlInput.value.trim();
-            const imageFile = imageFileInput.files[0];
-
-            const cleanup = () => {
-                addBtn.disabled = false;
-                addBtn.textContent = 'Add to Gallery';
-            };
-
-            if (!word) {
-                displayError('Please enter a word or caption.');
-                cleanup();
-                return;
-            }
-            if (!imageUrl && !imageFile) {
-                displayError('Please provide an image URL or upload a file.');
-                cleanup();
-                return;
-            }
-
-            const addItem = (imageData) => {
-                if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) {
-                    displayError(`The word "${word}" already exists in the gallery.`);
-                    cleanup();
-                    return;
-                }
-                words.push({ word, image: imageData });
-                if (saveWords()) {
-                    wordInput.value = '';
-                    imageUrlInput.value = '';
-                    imageFileInput.value = '';
-                }
-                cleanup();
-            };
-
-            if (imageUrl && imageFile) {
-                displayError("Please use either a URL or a file, not both.");
-                cleanup();
-                return;
-            }
-
-            if (imageUrl) {
-                 toDataURL(imageUrl, addItem);
-            } else if (imageFile) {
-                // NEW: Pass the local file to the compression function
-                handleImageBlob(imageFile, addItem);
-            }
-        });
 
         gallery.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) {
-                const index = parseInt(e.target.getAttribute('data-index'), 10);
-                if (!isNaN(index) && index >= 0 && index < words.length) {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            const itemDiv = target.closest('.gallery-item');
+            const index = parseInt(itemDiv.getAttribute('data-index'), 10);
+
+            if (target.classList.contains('delete-btn')) {
+                if (!isNaN(index) && confirm(`Are you sure you want to delete "${words[index].word}"?`)) {
                     words.splice(index, 1);
                     saveWords();
                 }
+            } 
+            else if (target.classList.contains('edit-btn')) {
+                enterEditMode(itemDiv, index);
+            }
+            else if (target.classList.contains('save-edit-btn')) {
+                const input = itemDiv.querySelector('.edit-input');
+                const newWord = input.value.trim();
+                if (newWord && newWord !== words[index].word) {
+                    words[index].word = newWord;
+                    saveWords(); // This will re-render the gallery
+                } else {
+                    renderGallery(); // Just re-render to exit edit mode
+                }
+            }
+            else if (target.classList.contains('cancel-edit-btn')) {
+                renderGallery(); // Just re-render to exit edit mode
             }
         });
 
+        // ... (The rest of the add/compression logic remains the same)
+        function compressImage(e,t){const n=new Image;n.src=URL.createObjectURL(e),n.onload=()=>{const e=document.createElement("canvas"),o=e.getContext("2d");let{width:a,height:c}=n;a>c?a>MAX_DIMENSION&&(c*=MAX_DIMENSION/a,a=MAX_DIMENSION):c>MAX_DIMENSION&&(a*=MAX_DIMENSION/c,c=MAX_DIMENSION),e.width=a,e.height=c,o.drawImage(n,0,0,a,c),t(e.toDataURL("image/jpeg",COMPRESSION_QUALITY))},n.onerror=()=>displayError("Could not process the provided image file.")}
+        function handleImageBlob(e,t){compressImage(e,t)}
+        function toDataURL(e,t){const n="https://api.allorigins.win/raw?url=";let o;try{o=n+encodeURIComponent(e)}catch(e){return void displayError("The provided URL is invalid.")}const a=new XMLHttpRequest;a.onload=function(){if(a.status>=400)return void displayError(`Failed to fetch image (Status: ${a.status}).`);handleImageBlob(a.response,t)},a.onerror=function(){displayError("Failed to fetch image. Check your network or the URL.")},a.open("GET",o),a.responseType="blob",a.send()}
+        addBtn.addEventListener("click",()=>{hideError(),addBtn.disabled=!0,addBtn.textContent="Adding...";const e=wordInput.value.trim(),t=imageUrlInput.value.trim(),n=imageFileInput.files[0],o=()=>{addBtn.disabled=!1,addBtn.textContent="Add to Gallery"};if(!e)return displayError("Please enter a word or caption."),void o();if(!t&&!n)return displayError("Please provide an image URL or upload a file."),void o();const a=a=>{if(words.some(t=>t.word.toLowerCase()===e.toLowerCase()))return displayError(`The word "${e}" already exists in the gallery.`),void o();words.push({word:e,image:a}),saveWords()&&(wordInput.value="",imageUrlInput.value="",imageFileInput.value=""),o()};if(t&&n)return displayError("Please use either a URL or a file, not both."),void o();t?toDataURL(t,a):n&&handleImageBlob(n,a)});
+        
         loadWords();
     </script>
 </body>
