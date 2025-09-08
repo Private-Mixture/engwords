@@ -4,180 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Words Gallery</title>
+    <!-- FAVICON: A simple, elegant SVG icon generated directly from code -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%2280%22 height=%2280%22 x=%2210%22 y=%2210%22 rx=%2215%22 ry=%2215%22 fill=%22%23bb86fc%22 /><text x=%2250%22 y=%2260%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23121212%22 font-family=%22sans-serif%22 font-weight=%22bold%22>W+</text></svg>">
     <style>
         :root {
             --background-color: #121212;
             --surface-color: #1e1e1e;
             --primary-color: #bb86fc;
-            --primary-variant-color: #3700b3;
-            --secondary-color: #03dac6;
             --text-on-background: rgba(255, 255, 255, 0.87);
             --text-on-surface: rgba(255, 255, 255, 0.6);
             --border-color: rgba(255, 255, 255, 0.12);
             --danger-color: #cf6679;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-on-background);
-            margin: 0;
-            padding: 16px;
-            font-size: 14px;
-            overscroll-behavior-y: contain;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: var(--surface-color);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            padding: 16px;
-        }
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0 0 16px;
-            text-align: center;
-            color: var(--primary-color);
-        }
-        .form-section {
-            margin-bottom: 16px;
-        }
-        .form-section label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-on-surface);
-        }
-        .input-field {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            background-color: #2c2c2c;
-            color: var(--text-on-background);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        .input-field:focus {
-            outline: 2px solid var(--primary-color);
-            border-color: transparent;
-        }
-        .button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            background-color: var(--primary-color);
-            color: #000;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s ease;
-        }
-        .button:hover {
-            background-color: #a050f0;
-        }
-        #gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 24px;
-        }
-        .gallery-item {
-            position: relative;
-            border-radius: 6px;
-            overflow: hidden;
-            background-color: #2c2c2c;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .gallery-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-        }
-        .gallery-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            display: block;
-        }
-        .gallery-item p {
-            margin: 0;
-            padding: 8px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-            background-color: rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .delete-btn {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 24px;
-            height: 24px;
-            background-color: var(--danger-color);
-            color: var(--background-color);
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 14px;
-            line-height: 24px;
-            text-align: center;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: opacity 0.2s, transform 0.2s;
-        }
-        .gallery-item:hover .delete-btn {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .or-separator {
-            text-align: center;
-            margin: 16px 0;
-            color: var(--text-on-surface);
-            font-weight: 500;
-            font-size: 12px;
-        }
-        #storage-container {
-            margin-top: 16px;
-        }
-        #storage-info {
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-on-surface);
-            margin-bottom: 6px;
-        }
-        #storage-bar-background {
-            width: 100%;
-            height: 8px;
-            background-color: #2c2c2c;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-        #storage-bar-fill {
-            width: 0%;
-            height: 100%;
-            background-color: var(--primary-color);
-            border-radius: 4px;
-            transition: width 0.3s ease-out;
-        }
-        #error-message {
-            color: var(--danger-color);
-            font-weight: 500;
-            font-size: 13px;
-            text-align: center;
-            padding: 8px;
-            background-color: rgba(207, 102, 121, 0.1);
-            border-radius: 4px;
-            margin-bottom: 12px;
-            display: none;
-        }
+        /* ... (rest of the styles remain the same) ... */
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--background-color);color:var(--text-on-background);margin:0;padding:16px;font-size:14px;overscroll-behavior-y:contain}
+        .container{max-width:600px;margin:0 auto;background-color:var(--surface-color);border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,.2);padding:16px}
+        h1{font-size:24px;font-weight:600;margin:0 0 16px;text-align:center;color:var(--primary-color)}
+        .form-section{margin-bottom:16px}
+        .form-section label{display:block;margin-bottom:8px;font-weight:500;color:var(--text-on-surface)}
+        .input-field{width:100%;padding:10px;border:1px solid var(--border-color);background-color:#2c2c2c;color:var(--text-on-background);border-radius:6px;box-sizing:border-box;font-size:14px}
+        .input-field:focus{outline:2px solid var(--primary-color);border-color:transparent}
+        .button{width:100%;padding:12px;border:none;border-radius:6px;background-color:var(--primary-color);color:#000;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:background-color .2s ease}
+        .button:hover{background-color:#a050f0}
+        #gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:24px}
+        .gallery-item{position:relative;border-radius:6px;overflow:hidden;background-color:#2c2c2c;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .2s ease,box-shadow .2s ease}
+        .gallery-item:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.4)}
+        .gallery-item img{width:100%;height:120px;object-fit:cover;display:block}
+        .gallery-item p{margin:0;padding:8px;text-align:center;font-size:14px;font-weight:500;background-color:rgba(0,0,0,.3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .delete-btn{position:absolute;top:6px;right:6px;width:24px;height:24px;background-color:var(--danger-color);color:var(--background-color);border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:24px;text-align:center;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s}
+        .gallery-item:hover .delete-btn{opacity:1;transform:scale(1)}
+        .or-separator{text-align:center;margin:16px 0;color:var(--text-on-surface);font-weight:500;font-size:12px}
+        #storage-container{margin-top:16px}
+        #storage-info{text-align:center;font-size:12px;color:var(--text-on-surface);margin-bottom:6px}
+        #storage-bar-background{width:100%;height:8px;background-color:#2c2c2c;border-radius:4px;overflow:hidden;border:1px solid var(--border-color)}
+        #storage-bar-fill{width:0%;height:100%;background-color:var(--primary-color);border-radius:4px;transition:width .3s ease-out}
+        #error-message{color:var(--danger-color);font-weight:500;font-size:13px;text-align:center;padding:8px;background-color:rgba(207,102,121,.1);border-radius:4px;margin-bottom:12px;display:none}
     </style>
 </head>
 <body>
@@ -223,8 +84,10 @@
         const storageInfo = document.getElementById('storage-info');
         const storageBarFill = document.getElementById('storage-bar-fill');
         const errorMessage = document.getElementById('error-message');
-        const MAX_SIZE = 200 * 1024; // 200 KB
+        
         const STORAGE_LIMIT = 5 * 1024 * 1024; // 5 MB
+        const COMPRESSION_QUALITY = 0.75; // 75% JPEG quality
+        const MAX_DIMENSION = 300; // Resize to 300px max width/height
 
         let words = [];
 
@@ -274,7 +137,7 @@
                 const data = JSON.stringify(words);
                 if (data.length > STORAGE_LIMIT) {
                     displayError('Storage limit exceeded! Cannot save new item.');
-                    loadWords(); // Revert to the last saved state
+                    loadWords();
                     return false;
                 }
                 localStorage.setItem('galleryWords', data);
@@ -297,16 +160,54 @@
                     displayError("Could not load saved data. It might be corrupted.");
                 }
             } else {
-                 updateStorageInfo(); // Update storage info on first load
+                 updateStorageInfo();
             }
         }
         
+        /**
+         * NEW: Function to compress and resize an image from a Blob
+         */
+        function compressImage(blob, callback) {
+            const img = new Image();
+            img.src = URL.createObjectURL(blob);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                let { width, height } = img;
+                if (width > height) {
+                    if (width > MAX_DIMENSION) {
+                        height *= MAX_DIMENSION / width;
+                        width = MAX_DIMENSION;
+                    }
+                } else {
+                    if (height > MAX_DIMENSION) {
+                        width *= MAX_DIMENSION / height;
+                        height = MAX_DIMENSION;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Export as JPEG with specified quality
+                const dataUrl = canvas.toDataURL('image/jpeg', COMPRESSION_QUALITY);
+                callback(dataUrl);
+            };
+            img.onerror = () => {
+                displayError("Could not process the provided image file.");
+            };
+        }
+
+        function handleImageBlob(blob, callback) {
+            compressImage(blob, callback);
+        }
+
         function toDataURL(url, callback) {
-            // Using a more robust CORS proxy
             const proxyUrl = 'https://api.allorigins.win/raw?url=';
             let finalUrl;
             try {
-                // Properly encode the target URL
                 finalUrl = proxyUrl + encodeURIComponent(url);
             } catch (e) {
                 displayError("The provided URL is invalid.");
@@ -316,55 +217,49 @@
             const xhr = new XMLHttpRequest();
             xhr.onload = function() {
                 if (xhr.status >= 400) {
-                    displayError(`Failed to fetch image. The proxy reported an error (Status: ${xhr.status}).`);
+                    displayError(`Failed to fetch image (Status: ${xhr.status}).`);
                     return;
                 }
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    if (reader.result.length > MAX_SIZE * 1.4) {
-                         displayError(`Image is too large after processing. Please use a smaller image (under ${Math.round(MAX_SIZE/1024)} KB).`);
-                         return;
-                    }
-                    callback(reader.result);
-                }
-                reader.onerror = () => displayError('Could not process the fetched image.');
-                reader.readAsDataURL(xhr.response);
+                // NEW: Pass the resulting blob to the compression function
+                handleImageBlob(xhr.response, callback);
             };
             xhr.onerror = function() {
-                 displayError("Failed to fetch image. Check your network or if the proxy is down.");
+                 displayError("Failed to fetch image. Check your network or the URL.");
             }
             xhr.open('GET', finalUrl);
             xhr.responseType = 'blob';
             xhr.send();
         }
 
-        function fileToDataURL(file, callback) {
-            const reader = new FileReader();
-            reader.onloadend = function() {
-                callback(reader.result);
-            }
-            reader.readAsDataURL(file);
-        }
-
         addBtn.addEventListener('click', () => {
             hideError();
+            addBtn.disabled = true; // Prevent double clicks
+            addBtn.textContent = 'Adding...';
+
             const word = wordInput.value.trim();
             const imageUrl = imageUrlInput.value.trim();
             const imageFile = imageFileInput.files[0];
 
+            const cleanup = () => {
+                addBtn.disabled = false;
+                addBtn.textContent = 'Add to Gallery';
+            };
+
             if (!word) {
                 displayError('Please enter a word or caption.');
+                cleanup();
                 return;
             }
             if (!imageUrl && !imageFile) {
                 displayError('Please provide an image URL or upload a file.');
+                cleanup();
                 return;
             }
 
             const addItem = (imageData) => {
-                // Check if an entry with the same word already exists
                 if (words.some(w => w.word.toLowerCase() === word.toLowerCase())) {
                     displayError(`The word "${word}" already exists in the gallery.`);
+                    cleanup();
                     return;
                 }
                 words.push({ word, image: imageData });
@@ -373,35 +268,33 @@
                     imageUrlInput.value = '';
                     imageFileInput.value = '';
                 }
+                cleanup();
             };
 
             if (imageUrl && imageFile) {
-                displayError("Please provide only one image source: either a URL or a file.");
+                displayError("Please use either a URL or a file, not both.");
+                cleanup();
                 return;
             }
 
             if (imageUrl) {
                  toDataURL(imageUrl, addItem);
             } else if (imageFile) {
-                if (imageFile.size > MAX_SIZE) {
-                    displayError(`File is too large (${(imageFile.size/1024).toFixed(0)} KB). Max size is ${MAX_SIZE/1024} KB.`);
-                    return;
-                }
-                fileToDataURL(imageFile, addItem);
+                // NEW: Pass the local file to the compression function
+                handleImageBlob(imageFile, addItem);
             }
         });
 
         gallery.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-btn')) {
                 const index = parseInt(e.target.getAttribute('data-index'), 10);
-                if (index >= 0 && index < words.length) {
+                if (!isNaN(index) && index >= 0 && index < words.length) {
                     words.splice(index, 1);
                     saveWords();
                 }
             }
         });
 
-        // Initial load
         loadWords();
     </script>
 </body>
