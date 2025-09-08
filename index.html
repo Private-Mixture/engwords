@@ -126,18 +126,11 @@
         function saveWords() {
             try {
                 const data = JSON.stringify(words);
-                if (data.length > STORAGE_LIMIT) {
-                    displayError('Storage limit exceeded!');
-                    loadWords();
-                    return false;
-                }
+                if (data.length > STORAGE_LIMIT) { displayError('Storage limit exceeded!'); loadWords(); return false; }
                 localStorage.setItem('galleryWords', data);
                 renderGallery();
                 return true;
-            } catch (e) {
-                displayError('Failed to save data.');
-                return false;
-            }
+            } catch (e) { displayError('Failed to save data.'); return false; }
         }
 
         function loadWords() {
@@ -151,10 +144,7 @@
                         if (!w.timestamp) { w.timestamp = Date.now() - Math.random() * 100000; needsSave = true; }
                     });
                     if (needsSave) setTimeout(() => saveWords(), 0);
-                } catch (e) {
-                    words = [];
-                    displayError("Could not load saved data.");
-                }
+                } catch (e) { words = []; displayError("Could not load saved data."); }
             }
             renderGallery();
         }
@@ -162,12 +152,24 @@
         function renderGallery() {
             gallery.innerHTML = '';
             let sorted = [...words];
+
+            // BUGFIX: Rewritten and simplified sorting logic
             if (sortState.type === 'name') {
-                sorted.sort((a, b) => a.word.localeCompare(b.word));
-                if (sortState.direction === 'desc') sorted.reverse();
+                sorted.sort((a, b) => {
+                    if (sortState.direction === 'asc') { // A-Z
+                        return a.word.localeCompare(b.word);
+                    } else { // Z-A
+                        return b.word.localeCompare(a.word);
+                    }
+                });
             } else { // date
-                sorted.sort((a, b) => b.timestamp - a.timestamp);
-                if (sortState.direction === 'desc') sorted.reverse();
+                sorted.sort((a, b) => {
+                    if (sortState.direction === 'asc') { // asc = Newest
+                        return b.timestamp - a.timestamp;
+                    } else { // desc = Oldest
+                        return a.timestamp - b.timestamp;
+                    }
+                });
             }
 
             sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
@@ -190,12 +192,10 @@
             if (index === -1) return;
             editingItemId = id;
             const item = words[index];
-
             editPreviewImg.src = item.image;
             editWordInput.value = item.word;
             editImageUrlInput.value = '';
             editImageFileInput.value = '';
-            
             editModalOverlay.classList.add('visible');
         }
 
@@ -208,10 +208,7 @@
             const btn = e.target.closest('button'); if (!btn) return;
             const itemDiv = btn.closest('.gallery-item'); if (!itemDiv) return;
             const id = itemDiv.getAttribute('data-id'); if (!id) return;
-            
-            if (btn.classList.contains('edit-btn')) {
-                openEditModal(id);
-            } 
+            if (btn.classList.contains('edit-btn')) { openEditModal(id); } 
             else if (btn.classList.contains('delete-btn')) {
                 const index = words.findIndex(w => w.id === id); if (index === -1) return;
                 if (confirm(`Delete "${words[index].word}"?`)) { words.splice(index, 1); saveWords(); }
@@ -221,29 +218,18 @@
         saveEditBtn.addEventListener('click', () => {
             if (!editingItemId) return;
             const index = words.findIndex(w => w.id === editingItemId); if (index === -1) return;
-
-            const newWord = editWordInput.value.trim();
-            const newUrl = editImageUrlInput.value.trim();
-            const newFile = editImageFileInput.files[0];
-            const hasNewWord = newWord && newWord !== words[index].word;
-            const hasNewImage = newUrl || newFile;
-
+            const newWord = editWordInput.value.trim(), newUrl = editImageUrlInput.value.trim(), newFile = editImageFileInput.files[0];
+            const hasNewWord = newWord && newWord !== words[index].word, hasNewImage = newUrl || newFile;
             if (!hasNewWord && !hasNewImage) { closeEditModal(); return; }
-
             saveEditBtn.disabled = true; saveEditBtn.textContent = 'Saving...';
             const cleanup = () => { saveEditBtn.disabled = false; saveEditBtn.textContent = 'Save Changes'; closeEditModal(); };
-
             if (hasNewWord) words[index].word = newWord;
-            
             const handleError = msg => { displayError(msg); cleanup(); };
             if (hasNewImage) {
                 const handleNewImage = imgData => { words[index].image = imgData; saveWords(); cleanup(); };
                 if (newUrl) toDataURL(newUrl, handleNewImage, handleError);
                 else handleImageBlob(newFile, handleNewImage, handleError);
-            } else if (hasNewWord) {
-                saveWords();
-                cleanup();
-            }
+            } else if (hasNewWord) { saveWords(); cleanup(); }
         });
 
         cancelEditBtn.addEventListener('click', closeEditModal);
@@ -277,7 +263,7 @@
         });
         
         function updateStorageInfo() { const u=(localStorage.getItem("galleryWords")||"").length;storageInfo.textContent=`Storage: ${(u/1024).toFixed(2)} KB / ~${(STORAGE_LIMIT/1024/1024).toFixed(2)} MB used`,storageBarFill.style.width=`${Math.min(u/STORAGE_LIMIT*100,100)}%`; }
-        function displayError(msg) { errorMessage.textContent=msg;errorMessage.style.display="block" }
+        function displayError(msg) { errorMessage.textContent=msg,errorMessage.style.display="block" }
         function hideError() { errorMessage.style.display="none" }
         function compressImage(blob, cb, errCb) { const i=new Image;i.src=URL.createObjectURL(blob),i.onload=()=>{const b=document.createElement("canvas"),c=b.getContext("2d");let{width:w,height:h}=i;w>h?w>MAX_DIMENSION&&(h*=MAX_DIMENSION/w,w=MAX_DIMENSION):h>MAX_DIMENSION&&(w*=MAX_DIMENSION/h,h=MAX_DIMENSION),b.width=w,b.height=h,c.drawImage(i,0,0,w,h),cb(b.toDataURL("image/jpeg",COMPRESSION_QUALITY))},i.onerror=()=>errCb("Could not process image file.") }
         function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
@@ -287,5 +273,3 @@
     </script>
 </body>
 </html>
-
-
