@@ -123,15 +123,7 @@
 
         function generateUUID() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
         
-        function saveWords() {
-            try {
-                const data = JSON.stringify(words);
-                if (data.length > STORAGE_LIMIT) { displayError('Storage limit exceeded!'); loadWords(); return false; }
-                localStorage.setItem('galleryWords', data);
-                renderGallery();
-                return true;
-            } catch (e) { displayError('Failed to save data.'); return false; }
-        }
+        function saveWords() { try { const data = JSON.stringify(words); if (data.length > STORAGE_LIMIT) { displayError('Storage limit exceeded!'); loadWords(); return false; } localStorage.setItem('galleryWords', data); renderGallery(); return true; } catch (e) { displayError('Failed to save data.'); return false; } }
 
         function loadWords() {
             const saved = localStorage.getItem('galleryWords');
@@ -141,7 +133,11 @@
                     let needsSave = false;
                     words.forEach(w => {
                         if (!w.id) { w.id = generateUUID(); needsSave = true; }
-                        if (!w.timestamp) { w.timestamp = Date.now() - Math.random() * 100000; needsSave = true; }
+                        // Ensure timestamp is a number and exists
+                        if (typeof w.timestamp !== 'number') { 
+                            w.timestamp = Date.now() - Math.floor(Math.random() * 1000000); 
+                            needsSave = true; 
+                        }
                     });
                     if (needsSave) setTimeout(() => saveWords(), 0);
                 } catch (e) { words = []; displayError("Could not load saved data."); }
@@ -153,23 +149,19 @@
             gallery.innerHTML = '';
             let sorted = [...words];
 
-            // BUGFIX: Rewritten and simplified sorting logic
+            // FINAL BUGFIX: Robust sorting logic
             if (sortState.type === 'name') {
-                sorted.sort((a, b) => {
-                    if (sortState.direction === 'asc') { // A-Z
-                        return a.word.localeCompare(b.word);
-                    } else { // Z-A
-                        return b.word.localeCompare(a.word);
-                    }
-                });
+                sorted.sort((a, b) => a.word.localeCompare(b.word));
+                if (sortState.direction === 'desc') { // Z-A
+                    sorted.reverse();
+                }
             } else { // date
-                sorted.sort((a, b) => {
-                    if (sortState.direction === 'asc') { // asc = Newest
-                        return b.timestamp - a.timestamp;
-                    } else { // desc = Oldest
-                        return a.timestamp - b.timestamp;
-                    }
-                });
+                // Base sort: oldest to newest (works correctly)
+                sorted.sort((a, b) => a.timestamp - b.timestamp);
+                if (sortState.direction === 'asc') { // asc = Newest, so reverse the base sort
+                    sorted.reverse();
+                }
+                // if direction is 'desc' (Oldest), do nothing, as base sort is already correct.
             }
 
             sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
@@ -188,8 +180,7 @@
         }
         
         function openEditModal(id) {
-            const index = words.findIndex(w => w.id === id);
-            if (index === -1) return;
+            const index = words.findIndex(w => w.id === id); if (index === -1) return;
             editingItemId = id;
             const item = words[index];
             editPreviewImg.src = item.image;
@@ -199,10 +190,7 @@
             editModalOverlay.classList.add('visible');
         }
 
-        function closeEditModal() {
-            editingItemId = null;
-            editModalOverlay.classList.remove('visible');
-        }
+        function closeEditModal() { editingItemId = null; editModalOverlay.classList.remove('visible'); }
 
         gallery.addEventListener('click', e => {
             const btn = e.target.closest('button'); if (!btn) return;
