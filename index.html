@@ -24,7 +24,28 @@
         .gallery-item{position:relative;border-radius:6px;overflow:hidden;background-color:#2c2c2c;box-shadow:0 2px 4px rgba(0,0,0,.3);display:flex;flex-direction:column; transition: transform 0.2s ease, box-shadow 0.2s ease;}
         .gallery-item:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.4)}
         .gallery-item img{width:100%;height:120px;object-fit:cover;display:block}
-        .gallery-item p{margin:8px;text-align:center;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; margin-top: auto;}
+        
+        /* CORRECTED STYLES for caption collapsing */
+        .gallery-item p{
+            text-align:center;
+            font-size:14px;
+            font-weight:500;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+            margin:0; /* Remove top margin */
+            padding: 8px; /* Control space with padding */
+            height: 1.5em; /* Set explicit height for transition */
+            transition: opacity .2s, visibility .2s, height .2s, padding .2s;
+        }
+        .captions-hidden .gallery-item p { 
+            opacity: 0; 
+            visibility: hidden;
+            height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
         .action-btn{position:absolute;top:6px;width:24px;height:24px;border:none;border-radius:50%;cursor:pointer;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center}
         .action-btn svg{width:14px;height:14px;fill:var(--background-color)}
         .delete-btn{right:6px;background-color:var(--danger-color)}
@@ -46,6 +67,9 @@
         .modal h2{margin:0 0 16px;text-align:center;font-size:20px;}
         .modal-preview-img{width:100%;height:150px;object-fit:contain;border-radius:6px;margin-bottom:16px;background-color:#121212;}
         .modal-buttons{display:flex;gap:10px;margin-top:24px;}
+        #toggle-captions-btn{position:fixed;bottom:24px;right:24px;width:40px;height:40px;background-color:var(--primary-color);border-radius:50%;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1001;transition:background-color .2s, transform .2s;}
+        #toggle-captions-btn:hover{background-color:#a050f0; transform: scale(1.05);}
+        #toggle-captions-btn svg{width:20px;height:20px;fill:#000;}
     </style>
 </head>
 <body>
@@ -105,21 +129,41 @@
         </div>
     </div>
     
+    <button id="toggle-captions-btn" title="Toggle Captions"></button>
+
     <svg style="display:none;">
         <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
         <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="#03dac6"/></symbol>
         <symbol id="icon-cross" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#cf6679"/></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+        <symbol id="icon-eye-open" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></symbol>
+        <symbol id="icon-eye-closed" viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L21.73 22 23 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></symbol>
     </svg>
 
     <script>
-        const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortNameBtn = document.getElementById('sort-name-btn'), sortDateBtn = document.getElementById('sort-date-btn');
+        const wordInput = document.getElementById('word'), imageUrlInput = document.getElementById('image-url'), imageFileInput = document.getElementById('image-file'), addBtn = document.getElementById('add-btn'), galleryContainer = document.getElementById('gallery-container'), gallery = document.getElementById('gallery'), storageInfo = document.getElementById('storage-info'), storageBarFill = document.getElementById('storage-bar-fill'), errorMessage = document.getElementById('error-message'), sortNameBtn = document.getElementById('sort-name-btn'), sortDateBtn = document.getElementById('sort-date-btn');
         const editModalOverlay = document.getElementById('edit-modal-overlay'), editModal = document.getElementById('edit-modal'), editPreviewImg = document.getElementById('edit-preview-img'), editWordInput = document.getElementById('edit-word'), editImageUrlInput = document.getElementById('edit-image-url'), editImageFileInput = document.getElementById('edit-image-file'), saveEditBtn = document.getElementById('save-edit-btn'), cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const toggleCaptionsBtn = document.getElementById('toggle-captions-btn');
         
         const STORAGE_LIMIT = 5 * 1024 * 1024, COMPRESSION_QUALITY = 0.75, MAX_DIMENSION = 300;
         
         let words = [], editingItemId = null;
         let sortState = { type: 'name', direction: 'asc' };
+
+        let areCaptionsVisible = true;
+        function updateToggleIcon() {
+            if (areCaptionsVisible) {
+                toggleCaptionsBtn.innerHTML = '<svg><use href="#icon-eye-open"/></svg>';
+                galleryContainer.classList.remove('captions-hidden');
+            } else {
+                toggleCaptionsBtn.innerHTML = '<svg><use href="#icon-eye-closed"/></svg>';
+                galleryContainer.classList.add('captions-hidden');
+            }
+        }
+        toggleCaptionsBtn.addEventListener('click', () => {
+            areCaptionsVisible = !areCaptionsVisible;
+            updateToggleIcon();
+        });
 
         function generateUUID() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
         
@@ -133,11 +177,7 @@
                     let needsSave = false;
                     words.forEach(w => {
                         if (!w.id) { w.id = generateUUID(); needsSave = true; }
-                        // Ensure timestamp is a number and exists
-                        if (typeof w.timestamp !== 'number') { 
-                            w.timestamp = Date.now() - Math.floor(Math.random() * 1000000); 
-                            needsSave = true; 
-                        }
+                        if (typeof w.timestamp !== 'number') { w.timestamp = Date.now() - Math.floor(Math.random() * 1000000); needsSave = true; }
                     });
                     if (needsSave) setTimeout(() => saveWords(), 0);
                 } catch (e) { words = []; displayError("Could not load saved data."); }
@@ -149,19 +189,12 @@
             gallery.innerHTML = '';
             let sorted = [...words];
 
-            // FINAL BUGFIX: Robust sorting logic
             if (sortState.type === 'name') {
                 sorted.sort((a, b) => a.word.localeCompare(b.word));
-                if (sortState.direction === 'desc') { // Z-A
-                    sorted.reverse();
-                }
-            } else { // date
-                // Base sort: oldest to newest (works correctly)
+                if (sortState.direction === 'desc') { sorted.reverse(); }
+            } else {
                 sorted.sort((a, b) => a.timestamp - b.timestamp);
-                if (sortState.direction === 'asc') { // asc = Newest, so reverse the base sort
-                    sorted.reverse();
-                }
-                // if direction is 'desc' (Oldest), do nothing, as base sort is already correct.
+                if (sortState.direction === 'asc') { sorted.reverse(); }
             }
 
             sortNameBtn.textContent = `Sort by Name ${sortState.type === 'name' ? (sortState.direction === 'asc' ? '(A-Z)' : '(Z-A)') : ''}`;
@@ -257,7 +290,9 @@
         function handleImageBlob(blob, cb, errCb) { compressImage(blob, cb, errCb); }
         function toDataURL(url, cb, errCb) { const p="https://api.allorigins.win/raw?url=";let f;try{f=p+encodeURIComponent(url)}catch(e){return errCb("Invalid URL.")}const x=new XMLHttpRequest;x.onload=()=>x.status>=400?errCb(`Fetch error: ${x.status}`):handleImageBlob(x.response,cb,errCb),x.onerror=()=>errCb("Network error."),x.open("GET",f),x.responseType="blob",x.send() }
         
+        // Initial Load
         loadWords();
+        updateToggleIcon();
     </script>
 </body>
 </html>
